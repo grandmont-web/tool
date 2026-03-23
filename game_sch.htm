@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨🏆 夢幻粉紫賽程產生器 🔮✨</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入圓潤可愛字體 Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 引入五彩紙片特效庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* 夢幻粉紫風格自訂 CSS */
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #fdf4ff; 
+            background-image: radial-gradient(#fae8ff 4px, transparent 4px); 
+            background-size: 36px 36px;
+            color: #4a044e; 
+            overflow-x: hidden;
+        }
+
+        .cute-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            box-shadow: 0 12px 35px rgba(217, 70, 239, 0.2); 
+            border: 4px solid #ffffff;
+        }
+
+        .cute-btn {
+            background: linear-gradient(135deg, #d946ef 0%, #a855f7 100%); 
+            color: #ffffff;
+            font-weight: 700;
+            border-radius: 999px;
+            box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 3px solid #ffffff;
+        }
+
+        .cute-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(168, 85, 247, 0.6);
+        }
+
+        .cute-btn:active {
+            transform: translateY(2px);
+        }
+
+        .cute-btn-disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+            transform: none !important;
+        }
+
+        .cute-input {
+            border: 3px solid #fae8ff; 
+            border-radius: 16px;
+            padding: 14px;
+            transition: all 0.3s;
+            background: #fff;
+        }
+
+        .cute-input:focus {
+            outline: none;
+            border-color: #e879f9; 
+            box-shadow: 0 0 0 5px rgba(232, 121, 249, 0.3);
+        }
+
+        /* 參賽者選取狀態 */
+        .player-item {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+        .player-item.selected {
+            background: #f3e8ff; 
+            border-color: #d8b4fe; 
+            color: #6b21a8; 
+            transform: scale(1.03);
+            box-shadow: 0 6px 15px rgba(168, 85, 247, 0.2);
+        }
+        .player-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: transparent;
+        }
+        .player-item:not(.selected):not(.disabled):hover {
+            background: #faf5ff; 
+            border-color: #e9d5ff; 
+            transform: translateX(6px);
+        }
+
+        /* 晉級賽卡片 (霸氣加大版) */
+        .match-card {
+            background: white;
+            border: 4px solid #fae8ff; 
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(217, 70, 239, 0.15);
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 10;
+        }
+        .match-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(217, 70, 239, 0.3);
+            border-color: #f5d0fe; 
+        }
+        .match-player {
+            transition: background-color 0.2s, color 0.2s;
+            cursor: pointer;
+        }
+        .match-player.winner {
+            background-color: #fae8ff; 
+            color: #a21caf; 
+        }
+        .match-player.loser {
+            opacity: 0.4;
+            text-decoration: line-through;
+            background-color: #f8fafc;
+        }
+        .match-player:hover:not(.winner):not(.empty) {
+            background-color: #fdf4ff;
+        }
+
+        /* 動畫 */
+        .pop-in {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+            transform: scale(0.9) translateY(10px);
+        }
+        @keyframes popIn {
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* 隱藏預設捲軸與自訂捲軸 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #fdf4ff; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f0abfc; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #e879f9; }
+
+        /* 🏆 冠軍專屬霸氣放大動畫 */
+        .champion-crowned {
+            transform: scale(1.2) translateY(-5px);
+            z-index: 50 !important;
+            border-color: #fcd34d !important;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+            box-shadow: 0 20px 40px rgba(251, 191, 36, 0.4), 0 0 30px rgba(251, 191, 36, 0.6) !important;
+            animation: popCrown 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, glowCrown 2s infinite alternate !important;
+        }
+
+        .champion-crowned-text { color: #b45309 !important; }
+        .champion-crowned-icon { animation: bounceEmoji 1s infinite alternate; }
+
+        @keyframes popCrown {
+            0% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.3) translateY(-10px); }
+            100% { transform: scale(1.2) translateY(-5px); }
+        }
+
+        @keyframes glowCrown {
+            from { box-shadow: 0 15px 35px rgba(251, 191, 36, 0.4), 0 0 20px rgba(251, 191, 36, 0.3); }
+            to { box-shadow: 0 25px 45px rgba(251, 191, 36, 0.6), 0 0 50px rgba(251, 191, 36, 0.8); }
+        }
+
+        @keyframes bounceEmoji {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-700 pb-10 flex flex-col">
+
+    <!-- 導覽列 -->
+    <header class="bg-white/90 backdrop-blur-md border-b-4 border-fuchsia-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2 text-fuchsia-600 font-bold text-xl cursor-pointer" onclick="resetApp()">
+                <span class="text-2xl">🔮</span>
+                <span>夢幻粉紫賽程產生器 ✨</span>
+            </div>
+            <div id="nav-steps" class="hidden sm:flex items-center space-x-3 text-sm font-bold text-fuchsia-300">
+                <span id="nav-step-1" class="text-fuchsia-600">1️⃣ 設定名單 📝</span>
+                <span>👉</span>
+                <span id="nav-step-2">2️⃣ 幸運小組賽 🍀</span>
+                <span>👉</span>
+                <span id="nav-step-3">3️⃣ 最終決戰 👑</span>
+            </div>
+        </div>
+    </header>
+
+    <main id="app-container" class="w-full flex-1 flex flex-col max-w-7xl mx-auto px-4 py-8">
+        <!-- 內容將由 JavaScript 動態渲染 -->
+    </main>
+
+    <script>
+        /**
+         * 狀態管理與 LocalStorage 存取
+         */
+        const STORAGE_KEY = 'dreamy_tournament_participants_v3';
+        
+        // 用來追蹤目前是否為系統預設名單
+        let isDefaultList = false;
+
+        function loadParticipants() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    isDefaultList = false;
+                    return JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('讀取參賽者名單失敗', e);
+            }
+            // 沒有儲存紀錄時，載入預設名單並標記
+            isDefaultList = true;
+            return Array.from({ length: 30 }, (_, i) => `選手 🦄 ${i + 1}`);
+        }
+
+        function saveParticipants() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.participants));
+        }
+
+        const state = {
+            stage: 'setup',
+            participants: loadParticipants(),
+            numGroups: 8,
+            qualifiersPerGroup: 1,
+            groups: [],
+            selectedQualifiers: {}, 
+            bracketRounds: [],
+            champion: null,
+            isRolling: false,
+            isBracketRolling: false, 
+            bracketScale: 1 
+        };
+
+        const availableQualifiers = {
+            2: [1, 2, 4],
+            4: [1, 2],
+            8: [1]
+        };
+
+        const appContainer = document.getElementById('app-container');
+
+        function init() {
+            render();
+            appContainer.addEventListener('click', handleGlobalClick);
+            window.addEventListener('resize', () => {
+                if (state.stage === 'bracket') {
+                    drawBracketLines();
+                    fitBracket();
+                }
+            });
+        }
+
+        function handleGlobalClick(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+
+            if (action === 'generate-groups') {
+                handleGenerateGroups();
+            } else if (action === 'toggle-qualifier') {
+                if (state.isRolling) return; 
+                const gIdx = parseInt(target.dataset.gidx);
+                const name = target.dataset.name;
+                toggleQualifier(gIdx, name);
+            } else if (action === 'generate-bracket') {
+                handleGenerateBracket();
+            } else if (action === 'set-winner') {
+                if (state.isBracketRolling) return; // 動畫中禁止點擊
+                const rIdx = parseInt(target.dataset.ridx);
+                const mIdx = parseInt(target.dataset.midx);
+                const playerNum = parseInt(target.dataset.player);
+                handleMatchWinnerClick(rIdx, mIdx, playerNum);
+            } else if (action === 'reset') {
+                resetApp();
+            } else if (action === 'add-participants') {
+                handleAddParticipants();
+            } else if (action === 'remove-participant') {
+                isDefaultList = false; // 手動刪除就解除預設狀態
+                const idx = parseInt(target.dataset.idx);
+                state.participants.splice(idx, 1);
+                saveParticipants();
+                render(true);
+            } else if (action === 'clear-participants') {
+                if (confirm('確定要清空所有的參賽者名單嗎？ 🥺')) {
+                    isDefaultList = false; // 手動清空解除預設狀態
+                    state.participants = [];
+                    saveParticipants();
+                    render(true);
+                }
+            }
+        }
+
+        function updateNav() {
+            const s1 = document.getElementById('nav-step-1');
+            const s2 = document.getElementById('nav-step-2');
+            const s3 = document.getElementById('nav-step-3');
+            if(!s1) return;
+
+            s1.className = s2.className = s3.className = 'text-fuchsia-300';
+            if (state.stage === 'setup') s1.className = 'text-fuchsia-600 transition-colors transform scale-105';
+            if (state.stage === 'groups') s2.className = 'text-fuchsia-600 transition-colors transform scale-105';
+            if (state.stage === 'bracket') s3.className = 'text-fuchsia-600 transition-colors transform scale-105';
+        }
+
+        // 📝 累加邏輯 + 首次覆蓋預設名單
+        function handleAddParticipants() {
+            const inputEl = document.getElementById('input-new-participants');
+            if (!inputEl) return;
+            const text = inputEl.value;
+            if (!text.trim()) return;
+
+            const newNames = text.split('\n').map(n => n.trim()).filter(n => n !== '');
+            if (newNames.length > 0) {
+                if (isDefaultList) {
+                    // 如果是預設名單，第一次加入時直接覆蓋
+                    state.participants = newNames;
+                    isDefaultList = false; 
+                } else {
+                    // 否則進行累加
+                    state.participants = [...state.participants, ...newNames];
+                }
+                
+                saveParticipants();
+                render(true); 
+                
+                // 加入後清空輸入框
+                setTimeout(() => {
+                    const el = document.getElementById('input-new-participants');
+                    if(el) {
+                        el.value = '';
+                        el.focus();
+                    }
+                }, 10);
+            }
+        }
+
+        function render(noAnim = false) {
+            updateNav();
+            if (state.stage === 'setup') {
+                appContainer.innerHTML = renderSetup(noAnim);
+                
+                // 綁定下拉選單事件
+                document.getElementById('select-num-groups').addEventListener('change', (e) => {
+                    state.numGroups = parseInt(e.target.value);
+                    const allowed = availableQualifiers[state.numGroups];
+                    if (!allowed.includes(state.qualifiersPerGroup)) {
+                        state.qualifiersPerGroup = allowed[0];
+                    }
+                    render(true); 
+                });
+                document.getElementById('select-qualifiers').addEventListener('change', (e) => {
+                    state.qualifiersPerGroup = parseInt(e.target.value);
+                    render(true); 
+                });
+
+            } else if (state.stage === 'groups') {
+                appContainer.innerHTML = renderGroups(noAnim);
+                if (state.isRolling) {
+                    startRollingAnimation();
+                }
+
+            } else if (state.stage === 'bracket') {
+                appContainer.innerHTML = renderBracket(noAnim);
+                requestAnimationFrame(() => {
+                    drawBracketLines();
+                    fitBracket();
+                    if (state.isBracketRolling) {
+                        startBracketRollingAnimation();
+                    }
+                });
+            }
+        }
+
+        /* =========================================================
+           階段 1: 設定
+        ========================================================= */
+        function renderSetup(noAnim) {
+            const allowedQualifiers = availableQualifiers[state.numGroups];
+            const animClass = noAnim ? '' : 'pop-in';
+            
+            return `
+                <div class="max-w-2xl mx-auto w-full cute-card overflow-hidden ${animClass}">
+                    <div class="bg-fuchsia-50/80 p-6 border-b-4 border-white text-center">
+                        <h2 class="text-3xl font-bold text-fuchsia-600 tracking-wide">🔮 賽制設定 ⚙️</h2>
+                        <p class="text-fuchsia-400 font-medium mt-2">輸入名單並決定分組方式 (已開啟自動儲存 💾)</p>
+                    </div>
+                    
+                    <div class="p-8 space-y-6">
+                        <!-- 名單區 -->
+                        <div>
+                            <div class="flex justify-between items-end mb-3">
+                                <label class="block text-xl font-bold text-purple-600">📝 參賽者名單</label>
+                                <div class="flex items-center space-x-3">
+                                    <button data-action="clear-participants" class="text-sm font-bold text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 border-2 border-red-100 px-4 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1">
+                                        <span>🗑️ 清空</span>
+                                    </button>
+                                    <span class="text-sm font-bold text-slate-500 bg-fuchsia-50 border-2 border-fuchsia-100 px-4 py-1.5 rounded-full shadow-sm" id="count-preview">
+                                        總共 <span class="text-fuchsia-600 text-lg">${state.participants.length}</span> 名勇者 🦸‍♂️
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 新增輸入框 -->
+                            <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                                <textarea 
+                                    id="input-new-participants"
+                                    class="flex-1 min-h-[50px] sm:h-[60px] cute-input font-medium text-slate-600 resize-y leading-relaxed text-sm"
+                                    placeholder="在此貼上名單 (支援多行) 👉&#10;💡 若為第一次加入，系統會自動清空預設名單，之後皆為「累加」！"
+                                ></textarea>
+                                <button data-action="add-participants" class="bg-gradient-to-r from-fuchsia-400 to-purple-500 hover:from-fuchsia-500 hover:to-purple-600 text-white font-bold rounded-2xl px-6 py-3 sm:py-0 transition-all shadow-md flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 whitespace-nowrap">
+                                    <span class="text-xl">➕</span>
+                                    <span>加入名單</span>
+                                </button>
+                            </div>
+
+                            <!-- 名單視覺化標籤區 -->
+                            <div class="bg-white/60 border-2 border-fuchsia-100 rounded-3xl p-5 min-h-[160px] max-h-[350px] overflow-y-auto flex flex-wrap content-start gap-3 shadow-inner custom-scrollbar">
+                                ${state.participants.map((p, idx) => `
+                                    <div class="inline-flex items-center bg-white border-2 border-fuchsia-200 text-fuchsia-700 rounded-full pl-4 pr-1.5 py-1.5 font-bold shadow-sm transition-all hover:scale-105 hover:border-fuchsia-400 hover:shadow-md group">
+                                        <span class="truncate max-w-[180px] text-[15px]">${p}</span>
+                                        <button data-action="remove-participant" data-idx="${idx}" class="ml-2 w-7 h-7 flex items-center justify-center rounded-full bg-fuchsia-50 text-fuchsia-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer">
+                                            ✖
+                                        </button>
+                                    </div>
+                                `).join('')}
+                                ${state.participants.length === 0 ? `
+                                    <div class="text-slate-400 w-full text-center py-12 font-medium flex flex-col items-center gap-3">
+                                        <span class="text-4xl opacity-50">👻</span>
+                                        <span>目前沒有參賽者，請從上方貼上名單喔！</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- 賽制選項 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-purple-50/50 border-2 border-purple-100 p-6 rounded-3xl">
+                            <div>
+                                <label class="block text-lg font-bold text-purple-600 mb-2">📦 幫我分成幾組？</label>
+                                <select id="select-num-groups" class="w-full cute-input font-bold text-slate-600 cursor-pointer text-center text-lg">
+                                    <option value="2" ${state.numGroups === 2 ? 'selected' : ''}>✌️ 2 組</option>
+                                    <option value="4" ${state.numGroups === 4 ? 'selected' : ''}>🍀 4 組</option>
+                                    <option value="8" ${state.numGroups === 8 ? 'selected' : ''}>🐙 8 組</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-lg font-bold text-purple-600 mb-2">⭐ 每組幾人晉級？</label>
+                                <select id="select-qualifiers" class="w-full cute-input font-bold text-slate-600 cursor-pointer text-center text-lg">
+                                    ${allowedQualifiers.map(num => `<option value="${num}" ${state.qualifiersPerGroup === num ? 'selected' : ''}>🔥 ${num} 人</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="text-center py-3 bg-white border-2 border-fuchsia-100 rounded-2xl shadow-sm" id="result-preview">
+                            ${getPreviewHtml()}
+                        </div>
+
+                        <button data-action="generate-groups" class="w-full py-4 cute-btn text-xl tracking-widest flex items-center justify-center space-x-3 mt-4">
+                            <span>🎲 隨機分配小組賽！ GO! 🚀</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getPreviewHtml() {
+            const total = state.numGroups * state.qualifiersPerGroup;
+            const finalStage = total === 8 ? '8強賽 🏆' : total === 4 ? '4強賽 ⚔️' : '決賽 👑';
+            return `<p class="font-bold text-slate-500 text-lg">
+                💡 將選出 <span class="text-fuchsia-600 font-bold text-2xl mx-1">${total}</span> 名出線者，直接進入 <span class="text-fuchsia-600 font-bold text-2xl mx-1">${finalStage}</span>
+            </p>`;
+        }
+
+        function handleGenerateGroups() {
+            const inputEl = document.getElementById('input-new-participants');
+            if (inputEl && inputEl.value.trim() !== '') {
+                handleAddParticipants();
+            }
+
+            const names = [...state.participants];
+            const requiredTotal = state.numGroups * state.qualifiersPerGroup;
+            
+            if (names.length < requiredTotal) {
+                alert(`哎呀 🥺！目前設定需要 ${requiredTotal} 名出線者，但名單只有 ${names.length} 名參賽者，請繼續新增喔！ 📝`);
+                return;
+            }
+
+            const shuffledNames = [...names].sort(() => Math.random() - 0.5);
+            state.groups = Array.from({ length: state.numGroups }, () => []);
+            shuffledNames.forEach((name, i) => {
+                state.groups[i % state.numGroups].push(name);
+            });
+            state.selectedQualifiers = {};
+            state.stage = 'groups';
+            state.isRolling = true; 
+            render();
+        }
+
+        /* =========================================================
+           階段 2: 小組賽
+        ========================================================= */
+        function renderGroups(noAnim) {
+            const totalRequired = state.numGroups * state.qualifiersPerGroup;
+            let currentSelectedCount = 0;
+            for(let i=0; i<state.numGroups; i++) currentSelectedCount += (state.selectedQualifiers[i] || []).length;
+            const isAllSelected = currentSelectedCount === totalRequired && !state.isRolling;
+
+            const topAnim = noAnim ? '' : 'pop-in';
+
+            let html = `
+                <div class="${topAnim} flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-fuchsia-600 tracking-wide">🍀 幸運小組賽名單</h2>
+                        <p class="text-purple-400 font-medium mt-2">請點擊名單選擇出線者 👆（每組需選出 ${state.qualifiersPerGroup} 人喔！）</p>
+                    </div>
+                    <button data-action="reset" class="px-5 py-2.5 rounded-full font-bold text-slate-400 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:text-fuchsia-500 transition-all shadow-sm flex items-center gap-2">
+                        <span>🐾 回到設定</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 w-full">
+            `;
+
+            state.groups.forEach((group, gIdx) => {
+                const selected = state.selectedQualifiers[gIdx] || [];
+                const isComplete = selected.length === state.qualifiersPerGroup;
+                
+                const cardAnim = noAnim ? '' : 'pop-in';
+                const styleStr = noAnim ? '' : `style="animation-delay: ${gIdx * 0.05}s; animation-fill-mode: both;"`;
+                const headerBg = isComplete && !state.isRolling ? 'bg-purple-100 border-purple-200' : 'bg-fuchsia-50 border-fuchsia-100';
+                const titleColor = isComplete && !state.isRolling ? 'text-purple-700' : 'text-fuchsia-600';
+
+                html += `
+                    <div class="cute-card overflow-hidden flex flex-col ${cardAnim}" ${styleStr}>
+                        <div class="p-4 border-b-4 ${headerBg} flex items-center justify-between transition-colors">
+                            <h3 class="font-bold text-xl ${titleColor}">第 ${gIdx + 1} 組 🎪</h3>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm font-bold ${isComplete && !state.isRolling ? 'text-purple-700' : 'text-slate-400'} bg-white px-3 py-1 rounded-full shadow-sm border-2 border-white">
+                                    ${selected.length} / ${state.qualifiersPerGroup}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 bg-white/50">
+                            <ul class="space-y-3">
+                `;
+
+                group.forEach(player => {
+                    const isSelected = selected.includes(player);
+                    const isDisabled = state.isRolling || (!isSelected && selected.length >= state.qualifiersPerGroup);
+                    
+                    let itemClass = "player-item w-full text-left px-4 py-3 rounded-2xl font-bold flex items-center justify-between text-base ";
+                    
+                    if (state.isRolling) {
+                        itemClass += "bg-white text-slate-400 border-2 border-slate-100 shadow-sm opacity-80 cursor-wait";
+                    } else if (isSelected) {
+                        itemClass += "selected";
+                    } else if (isDisabled) {
+                        itemClass += "disabled bg-slate-50 text-slate-400 border-2 border-transparent";
+                    } else {
+                        itemClass += "bg-white text-slate-600 shadow-sm border-2 border-fuchsia-50";
+                    }
+
+                    const content = state.isRolling 
+                        ? `<span class="truncate pr-2 rolling-name" data-final-name="${player}">🎲 隨機抽取中...</span>`
+                        : `<span class="truncate pr-2">${isSelected ? '💖' : '👤'} ${player}</span>${isSelected ? '<span class="text-fuchsia-500 text-xl">✨</span>' : ''}`;
+
+                    html += `
+                        <li>
+                            <button data-action="toggle-qualifier" data-gidx="${gIdx}" data-name="${player}" class="${itemClass}" ${isDisabled ? 'disabled' : ''}>
+                                ${content}
+                            </button>
+                        </li>
+                    `;
+                });
+
+                html += `
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const btnAnim = noAnim ? '' : 'pop-in';
+            const btnStyle = noAnim ? '' : 'style="animation-delay: 0.4s; animation-fill-mode: both;"';
+
+            html += `
+                </div>
+                <div class="flex justify-center pb-6 w-full ${btnAnim}" ${btnStyle}>
+                    <button data-action="generate-bracket" class="py-4 px-12 text-xl flex items-center space-x-3 ${isAllSelected ? 'cute-btn' : 'cute-btn cute-btn-disabled'}">
+                        <span>⚔️ 產生淘汰賽晉級圖！ 🚀</span>
+                    </button>
+                </div>
+            `;
+
+            return html;
+        }
+
+        function startRollingAnimation() {
+            const namesPool = [...state.participants];
+            const rollers = Array.from(document.querySelectorAll('.rolling-name'));
+            
+            let activeRollers = [...rollers];
+            
+            const intervalId = setInterval(() => {
+                activeRollers.forEach(el => {
+                    el.innerText = '🎲 ' + namesPool[Math.floor(Math.random() * namesPool.length)];
+                });
+            }, 40);
+            
+            rollers.forEach((el, index) => {
+                setTimeout(() => {
+                    activeRollers = activeRollers.filter(r => r !== el);
+                    el.innerText = '👤 ' + el.dataset.finalName;
+                    el.classList.remove('rolling-name');
+                    
+                    if (activeRollers.length === 0) {
+                        clearInterval(intervalId);
+                        state.isRolling = false;
+                        render(true); 
+                    }
+                }, 400 + (index * 80)); 
+            });
+        }
+
+        function toggleQualifier(gIdx, name) {
+            const currentSelected = state.selectedQualifiers[gIdx] || [];
+            if (currentSelected.includes(name)) {
+                state.selectedQualifiers[gIdx] = currentSelected.filter(n => n !== name);
+            } else {
+                if (currentSelected.length < state.qualifiersPerGroup) {
+                    state.selectedQualifiers[gIdx] = [...currentSelected, name];
+                }
+            }
+            render(true); 
+        }
+
+        function handleGenerateBracket() {
+            for (let i = 0; i < state.numGroups; i++) {
+                if ((state.selectedQualifiers[i] || []).length !== state.qualifiersPerGroup) {
+                    alert(`請確認第 ${i + 1} 組已經選出 ${state.qualifiersPerGroup} 位喔！ 🥺`);
+                    return;
+                }
+            }
+
+            const allQualifiers = Object.values(state.selectedQualifiers).flat();
+            const shuffled = [...allQualifiers].sort(() => Math.random() - 0.5);
+
+            const totalPlayers = shuffled.length;
+            const newRounds = [];
+
+            const firstRound = [];
+            for (let i = 0; i < totalPlayers; i += 2) {
+                firstRound.push({
+                    id: `r0-m${i/2}`,
+                    p1: shuffled[i],
+                    p2: shuffled[i+1],
+                    winner: null
+                });
+            }
+            newRounds.push(firstRound);
+
+            let currentMatchesCount = firstRound.length;
+            let roundIndex = 1;
+            while (currentMatchesCount > 1) {
+                currentMatchesCount = currentMatchesCount / 2;
+                const round = [];
+                for (let i = 0; i < currentMatchesCount; i++) {
+                    round.push({
+                        id: `r${roundIndex}-m${i}`,
+                        p1: null,
+                        p2: null,
+                        winner: null
+                    });
+                }
+                newRounds.push(round);
+                roundIndex++;
+            }
+
+            state.bracketRounds = newRounds;
+            state.champion = null;
+            state.stage = 'bracket';
+            state.bracketScale = 1; 
+            state.isBracketRolling = true; 
+            render();
+        }
+
+        /* =========================================================
+           階段 3: 淘汰賽
+        ========================================================= */
+        function getRoundName(totalRounds, currentRoundIndex) {
+            const roundsLeft = totalRounds - currentRoundIndex;
+            if (roundsLeft === 1) return "🔥 最終決賽 🔥";
+            if (roundsLeft === 2) return "⚔️ 準決賽";
+            if (roundsLeft === 3) return "🛡️ 半準決賽";
+            return `第 ${currentRoundIndex + 1} 輪`;
+        }
+
+        function triggerConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: ['#d946ef', '#a855f7', '#fbcfe8', '#fef08a'] }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: ['#d946ef', '#a855f7', '#fbcfe8', '#fef08a'] }));
+            }, 250);
+        }
+
+        function renderBracket(noAnim) {
+            const containerClass = noAnim ? '' : 'pop-in';
+            const totalRounds = state.bracketRounds.length;
+            const finalRIdx = totalRounds - 1; 
+            const isChampionCrowned = state.champion !== null;
+
+            let html = `
+                <div class="flex flex-col h-full w-full flex-1 ${containerClass}">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 shrink-0">
+                        <div>
+                            <h2 class="text-3xl font-bold text-fuchsia-600 tracking-wide">👑 最終決戰賽程圖</h2>
+                            <p class="text-purple-400 font-medium mt-2 text-sm">點擊卡片中的勝出者使其晉級 💖 (畫面會自動盡量放大！)</p>
+                        </div>
+                        <button data-action="reset" class="px-5 py-2 mt-2 sm:mt-0 rounded-full font-bold text-slate-400 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:text-fuchsia-500 transition-all shadow-sm text-sm flex items-center gap-2">
+                            <span>🐾 重新開始</span>
+                        </button>
+                    </div>
+
+                    <div id="bracket-viewport" class="flex-1 w-full bg-white/60 backdrop-blur-sm border-4 border-white rounded-[2rem] shadow-sm flex items-center justify-center overflow-hidden relative p-4 min-h-[600px]">
+                        <div id="bracket-scale-wrapper" class="origin-center" style="transform: scale(${state.bracketScale});">
+                            
+                            <!-- 佈局間距全面加大，適應大型卡片 -->
+                            <div id="bracket-container" class="relative inline-flex items-center justify-center p-8 gap-12 sm:gap-20 min-w-max">
+                                <svg id="bracket-svg" class="absolute top-0 left-0 pointer-events-none z-0"></svg>
+            `;
+
+            const renderMatchCard = (rIdx, mIdx) => {
+                const match = state.bracketRounds[rIdx][mIdx];
+                const p1Class = !match.p1 ? "empty" : (match.winner === match.p1 ? "winner" : (match.winner ? "loser" : ""));
+                const p2Class = !match.p2 ? "empty" : (match.winner === match.p2 ? "winner" : (match.winner ? "loser" : ""));
+
+                let p1Content, p2Content;
+                if (state.isBracketRolling && rIdx === 0) {
+                    p1Content = `<span class="truncate font-bold bracket-rolling-name" data-final-name="${match.p1 || ''}">🎲 隨機抽取中...</span>`;
+                    p2Content = `<span class="truncate font-bold bracket-rolling-name" data-final-name="${match.p2 || ''}">🎲 隨機抽取中...</span>`;
+                } else {
+                    // ✏️ 等待晉級 (無 EMOJI)
+                    const p1Text = match.p1 ? '👤 ' + match.p1 : '<span class="text-slate-300 text-xl font-normal tracking-widest">等待晉級</span>';
+                    const p2Text = match.p2 ? '👤 ' + match.p2 : '<span class="text-slate-300 text-xl font-normal tracking-widest">等待晉級</span>';
+
+                    p1Content = `<span class="truncate font-bold">${p1Text}</span>
+                                 <span class="text-fuchsia-500 text-4xl ml-2 transition-opacity duration-200 ${match.winner === match.p1 && match.p1 ? 'opacity-100' : 'opacity-0'}">✨</span>`;
+                    p2Content = `<span class="truncate font-bold">${p2Text}</span>
+                                 <span class="text-fuchsia-500 text-4xl ml-2 transition-opacity duration-200 ${match.winner === match.p2 && match.p2 ? 'opacity-100' : 'opacity-0'}">✨</span>`;
+                }
+
+                return `
+                    <div class="match-card relative w-72 sm:w-80 z-10 shrink-0" id="match-${rIdx}-${mIdx}">
+                        <div data-action="set-winner" data-ridx="${rIdx}" data-midx="${mIdx}" data-player="1" 
+                             class="match-player p-6 border-b-4 border-slate-50 flex items-center justify-between rounded-t-[20px] text-2xl sm:text-3xl ${p1Class} ${!match.p1?'bg-slate-50 text-slate-400':''}">
+                            ${p1Content}
+                        </div>
+                        <div data-action="set-winner" data-ridx="${rIdx}" data-midx="${mIdx}" data-player="2" 
+                             class="match-player p-6 flex items-center justify-between rounded-b-[20px] text-2xl sm:text-3xl ${p2Class} ${!match.p2?'bg-slate-50 text-slate-400':''}">
+                            ${p2Content}
+                        </div>
+                    </div>
+                `;
+            };
+
+            // 1. 左半部
+            html += `<div class="flex items-stretch gap-12 sm:gap-20">`;
+            for (let r = 0; r < finalRIdx; r++) {
+                html += `<div class="round-col flex flex-col justify-around relative gap-10">`;
+                html += `
+                    <div class="absolute -top-16 w-full text-center z-20">
+                        <span class="text-xl sm:text-2xl font-bold text-purple-600 bg-white border-[3px] border-purple-200 px-6 py-2 rounded-full shadow-sm whitespace-nowrap">
+                            ${getRoundName(totalRounds, r)}
+                        </span>
+                    </div>
+                `;
+                const matchesInRound = state.bracketRounds[r].length;
+                for (let m = 0; m < matchesInRound / 2; m++) {
+                    html += renderMatchCard(r, m);
+                }
+                html += `</div>`;
+            }
+            html += `</div>`;
+
+            // 2. 中央決賽與冠軍
+            const championBoxClasses = isChampionCrowned 
+                ? 'champion-crowned border-4' 
+                : 'bg-white border-4 border-fuchsia-100 shadow-sm opacity-90';
+            const championTextClasses = isChampionCrowned 
+                ? 'champion-crowned-text text-5xl sm:text-6xl' 
+                : 'text-slate-400 text-4xl sm:text-5xl';
+            const championIconClasses = isChampionCrowned 
+                ? 'champion-crowned-icon text-8xl sm:text-9xl' 
+                : 'text-7xl sm:text-8xl';
+
+            const finalMatch = state.bracketRounds[finalRIdx][0];
+            const fp1Class = !finalMatch.p1 ? "empty" : (finalMatch.winner === finalMatch.p1 ? "winner" : (finalMatch.winner ? "loser" : ""));
+            const fp2Class = !finalMatch.p2 ? "empty" : (finalMatch.winner === finalMatch.p2 ? "winner" : (finalMatch.winner ? "loser" : ""));
+
+            let fp1Content, fp2Content;
+            if (state.isBracketRolling && finalRIdx === 0) {
+                fp1Content = `<span class="truncate font-bold bracket-rolling-name" data-final-name="${finalMatch.p1 || ''}">🎲 隨機抽取中...</span>`;
+                fp2Content = `<span class="truncate font-bold bracket-rolling-name" data-final-name="${finalMatch.p2 || ''}">🎲 隨機抽取中...</span>`;
+            } else {
+                // ✏️ 等待晉級 (無 EMOJI)
+                const fp1Text = finalMatch.p1 ? '👤 ' + finalMatch.p1 : '<span class="text-slate-300 text-2xl font-normal tracking-widest">等待晉級</span>';
+                const fp2Text = finalMatch.p2 ? '👤 ' + finalMatch.p2 : '<span class="text-slate-300 text-2xl font-normal tracking-widest">等待晉級</span>';
+
+                fp1Content = `<span class="truncate font-bold">${fp1Text}</span>
+                              <span class="text-fuchsia-500 text-5xl ml-2 transition-opacity duration-200 ${finalMatch.winner === finalMatch.p1 && finalMatch.p1 ? 'opacity-100' : 'opacity-0'}">✨</span>`;
+                fp2Content = `<span class="truncate font-bold">${fp2Text}</span>
+                              <span class="text-fuchsia-500 text-5xl ml-2 transition-opacity duration-200 ${finalMatch.winner === finalMatch.p2 && finalMatch.p2 ? 'opacity-100' : 'opacity-0'}">✨</span>`;
+            }
+
+            html += `
+                <div class="flex flex-col justify-center items-center gap-12 relative z-10 shrink-0 px-8" id="champion-col">
+                    <div class="absolute -top-16 w-full text-center z-20">
+                        <span class="text-2xl sm:text-3xl font-bold text-violet-600 bg-violet-50 border-[3px] border-violet-200 px-8 py-3 rounded-full shadow-sm whitespace-nowrap">
+                            ${getRoundName(totalRounds, finalRIdx)}
+                        </span>
+                    </div>
+                    
+                    <div class="match-card relative w-80 sm:w-96 z-10 shrink-0 border-4 border-fuchsia-300 shadow-lg rounded-[24px] overflow-hidden" id="final-p1-card">
+                        <div data-action="set-winner" data-ridx="${finalRIdx}" data-midx="0" data-player="1" 
+                             class="match-player p-8 flex items-center justify-between text-3xl sm:text-4xl ${fp1Class} ${!finalMatch.p1?'bg-slate-50 text-slate-400':''}">
+                            ${fp1Content}
+                        </div>
+                    </div>
+
+                    <div id="champion-box" class="p-10 rounded-[32px] text-center transition-all duration-500 w-80 sm:w-96 relative ${championBoxClasses}">
+                        <div class="mb-4 ${championIconClasses}">🏆</div>
+                        <div class="text-xl sm:text-2xl text-fuchsia-400 font-bold mb-3 tracking-widest uppercase">✨ Grand Champion ✨</div>
+                        <h3 class="font-black truncate ${championTextClasses}">
+                            ${state.champion ? '👑 ' + state.champion : '<span class="text-slate-300 text-3xl font-normal tracking-widest">等待晉級</span>'}
+                        </h3>
+                    </div>
+
+                    <div class="match-card relative w-80 sm:w-96 z-10 shrink-0 border-4 border-fuchsia-300 shadow-lg rounded-[24px] overflow-hidden" id="final-p2-card">
+                        <div data-action="set-winner" data-ridx="${finalRIdx}" data-midx="0" data-player="2" 
+                             class="match-player p-8 flex items-center justify-between text-3xl sm:text-4xl ${fp2Class} ${!finalMatch.p2?'bg-slate-50 text-slate-400':''}">
+                            ${fp2Content}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 3. 右半部
+            html += `<div class="flex items-stretch gap-12 sm:gap-20">`;
+            for (let r = finalRIdx - 1; r >= 0; r--) {
+                html += `<div class="round-col flex flex-col justify-around relative gap-10">`;
+                html += `
+                    <div class="absolute -top-16 w-full text-center z-20">
+                        <span class="text-xl sm:text-2xl font-bold text-purple-600 bg-white border-[3px] border-purple-200 px-6 py-2 rounded-full shadow-sm whitespace-nowrap">
+                            ${getRoundName(totalRounds, r)}
+                        </span>
+                    </div>
+                `;
+                const matchesInRound = state.bracketRounds[r].length;
+                for (let m = matchesInRound / 2; m < matchesInRound; m++) {
+                    html += renderMatchCard(r, m);
+                }
+                html += `</div>`;
+            }
+            html += `</div>`;
+
+            html += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return html;
+        }
+
+        // 淘汰賽第一輪的跑馬燈動畫控制
+        function startBracketRollingAnimation() {
+            const allQualifiers = Object.values(state.selectedQualifiers).flat();
+            const rollers = Array.from(document.querySelectorAll('.bracket-rolling-name'));
+            
+            let activeRollers = [...rollers];
+            
+            const intervalId = setInterval(() => {
+                activeRollers.forEach(el => {
+                    el.innerText = '🎲 ' + allQualifiers[Math.floor(Math.random() * allQualifiers.length)];
+                });
+            }, 40);
+            
+            rollers.forEach((el, index) => {
+                setTimeout(() => {
+                    activeRollers = activeRollers.filter(r => r !== el);
+                    const finalName = el.dataset.finalName;
+                    
+                    if (finalName) {
+                        el.innerText = '👤 ' + finalName;
+                    } else {
+                        // 防呆處理
+                        el.innerHTML = '<span class="text-slate-300 text-xl font-normal tracking-widest">等待晉級</span>'; 
+                    }
+                    
+                    el.classList.remove('bracket-rolling-name');
+                    
+                    if (activeRollers.length === 0) {
+                        clearInterval(intervalId);
+                        state.isBracketRolling = false;
+                        render(true); 
+                    }
+                }, 600 + (index * 150)); 
+            });
+        }
+
+        function handleMatchWinnerClick(rIdx, mIdx, playerNum) {
+            const match = state.bracketRounds[rIdx][mIdx];
+            const winnerName = playerNum === 1 ? match.p1 : match.p2;
+
+            if (!winnerName) return; 
+
+            if (match.winner === winnerName) {
+                match.winner = null;
+            } else {
+                match.winner = winnerName;
+            }
+
+            let crIdx = rIdx;
+            let cmIdx = mIdx;
+            
+            while (crIdx < state.bracketRounds.length - 1) {
+                const nextMIdx = Math.floor(cmIdx / 2);
+                const isP1 = cmIdx % 2 === 0;
+                const nextMatch = state.bracketRounds[crIdx + 1][nextMIdx];
+
+                if (isP1) {
+                    nextMatch.p1 = state.bracketRounds[crIdx][cmIdx].winner;
+                } else {
+                    nextMatch.p2 = state.bracketRounds[crIdx][cmIdx].winner;
+                }
+
+                if (nextMatch.winner !== nextMatch.p1 && nextMatch.winner !== nextMatch.p2) {
+                    nextMatch.winner = null;
+                }
+
+                crIdx++;
+                cmIdx = nextMIdx;
+            }
+
+            const previousChampion = state.champion;
+            const finalMatch = state.bracketRounds[state.bracketRounds.length - 1][0];
+            state.champion = finalMatch.winner;
+
+            if (state.champion && state.champion !== previousChampion) {
+                triggerConfetti();
+            }
+
+            render(true); 
+        }
+
+        function drawBracketLines() {
+            const svg = document.getElementById('bracket-svg');
+            const container = document.getElementById('bracket-container');
+            if (!svg || !container) return;
+
+            svg.setAttribute('width', container.offsetWidth);
+            svg.setAttribute('height', container.offsetHeight);
+            svg.innerHTML = ''; 
+
+            const getCoords = (elem) => {
+                let left = 0, top = 0, curr = elem;
+                while (curr && curr !== container) {
+                    left += curr.offsetLeft; top += curr.offsetTop; curr = curr.offsetParent;
+                }
+                return { left, right: left + elem.offsetWidth, top, bottom: top + elem.offsetHeight, width: elem.offsetWidth, height: elem.offsetHeight, centerY: top + elem.offsetHeight / 2, centerX: left + elem.offsetWidth / 2 };
+            };
+
+            const strokeColor = "#e9d5ff"; 
+            const strokeWidth = "8"; 
+            const borderRadius = 20;
+            const finalRIdx = state.bracketRounds.length - 1;
+
+            for (let r = 0; r < finalRIdx; r++) {
+                const currentRound = state.bracketRounds[r];
+                for (let m = 0; m < currentRound.length; m++) {
+                    const card1 = document.getElementById(`match-${r}-${m}`);
+                    let card2;
+                    if (r + 1 === finalRIdx) {
+                        card2 = (m === 0) ? document.getElementById('final-p1-card') : document.getElementById('final-p2-card');
+                    } else {
+                        card2 = document.getElementById(`match-${r+1}-${Math.floor(m/2)}`);
+                    }
+                    if (!card1 || !card2) continue;
+
+                    const c1 = getCoords(card1);
+                    const c2 = getCoords(card2);
+                    let startX, startY, endX, endY;
+
+                    if (c1.centerX < c2.centerX) {
+                        startX = c1.right; startY = c1.centerY; endX = c2.left; endY = c2.centerY;
+                    } else {
+                        startX = c1.left; startY = c1.centerY; endX = c2.right; endY = c2.centerY;
+                    }
+
+                    const midX = startX + (endX - startX) / 2;
+                    const dir = startX < endX ? 1 : -1;
+                    const rX = borderRadius * dir;
+
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    let d = `M ${startX} ${startY} `;
+                    
+                    if (Math.abs(endX - startX) < borderRadius * 2) {
+                        d += `L ${endX} ${endY}`;
+                    } else {
+                        d += `L ${midX - rX} ${startY} `;
+                        if (endY > startY + borderRadius) {
+                            d += `Q ${midX} ${startY} ${midX} ${startY + borderRadius} L ${midX} ${endY - borderRadius} Q ${midX} ${endY} ${midX + rX} ${endY} `;
+                        } else if (endY < startY - borderRadius) {
+                            d += `Q ${midX} ${startY} ${midX} ${startY - borderRadius} L ${midX} ${endY + borderRadius} Q ${midX} ${endY} ${midX + rX} ${endY} `;
+                        } else {
+                            d = `M ${startX} ${startY} L ${midX} ${startY} L ${endX} ${endY}`;
+                        }
+                    }
+                    d += `L ${endX} ${endY}`;
+
+                    path.setAttribute("d", d);
+                    path.setAttribute("fill", "transparent");
+                    path.setAttribute("stroke", strokeColor);
+                    path.setAttribute("stroke-width", strokeWidth);
+                    path.setAttribute("stroke-linejoin", "round");
+                    path.setAttribute("stroke-linecap", "round");
+                    svg.appendChild(path);
+                }
+            }
+
+            const finalMatch = state.bracketRounds[finalRIdx][0];
+            const finalP1Card = document.getElementById('final-p1-card');
+            const finalP2Card = document.getElementById('final-p2-card');
+            const championBox = document.getElementById('champion-box');
+
+            if (championBox) {
+                const cb = getCoords(championBox);
+                if (finalP1Card) {
+                    const c1 = getCoords(finalP1Card);
+                    const isP1Win = state.champion === finalMatch.p1 && state.champion;
+                    const path1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path1.setAttribute("d", `M ${c1.centerX} ${c1.bottom} L ${cb.centerX} ${cb.top}`);
+                    path1.setAttribute("fill", "transparent");
+                    path1.setAttribute("stroke", isP1Win ? "#fcd34d" : "#e9d5ff");
+                    path1.setAttribute("stroke-width", isP1Win ? "12" : "8");
+                    path1.setAttribute("stroke-dasharray", isP1Win ? "none" : "10 10");
+                    path1.setAttribute("stroke-linecap", "round");
+                    svg.appendChild(path1);
+                }
+                if (finalP2Card) {
+                    const c2 = getCoords(finalP2Card);
+                    const isP2Win = state.champion === finalMatch.p2 && state.champion;
+                    const path2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path2.setAttribute("d", `M ${c2.centerX} ${c2.top} L ${cb.centerX} ${cb.bottom}`);
+                    path2.setAttribute("fill", "transparent");
+                    path2.setAttribute("stroke", isP2Win ? "#fcd34d" : "#e9d5ff");
+                    path2.setAttribute("stroke-width", isP2Win ? "12" : "8");
+                    path2.setAttribute("stroke-dasharray", isP2Win ? "none" : "10 10");
+                    path2.setAttribute("stroke-linecap", "round");
+                    svg.appendChild(path2);
+                }
+            }
+        }
+
+        function fitBracket() {
+            const viewport = document.getElementById('bracket-viewport');
+            const wrapper = document.getElementById('bracket-scale-wrapper');
+            const container = document.getElementById('bracket-container');
+            if (!viewport || !wrapper || !container) return;
+
+            const availWidth = viewport.clientWidth;
+            const availHeight = viewport.clientHeight;
+            const contentWidth = container.offsetWidth;
+            const contentHeight = container.offsetHeight;
+
+            const scaleX = (availWidth * 0.95) / contentWidth;
+            const scaleY = (availHeight * 0.95) / contentHeight;
+            const scale = Math.min(scaleX, scaleY, 2.5);
+            
+            state.bracketScale = scale;
+            wrapper.style.transform = `scale(${scale})`;
+        }
+
+        function resetApp() {
+            if (state.stage !== 'setup' && window.confirm("確定要回到設定頁面嗎？所有晉級進度將會重置喔！ 🦄 (但名單會為您保留)")) {
+                state.stage = 'setup';
+                state.champion = null;
+                state.isRolling = false;
+                state.isBracketRolling = false; 
+                render();
+            }
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
