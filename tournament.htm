@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨🏆 晴空藍賽程產生器 🌊✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #f0f9ff;
+            background-image: radial-gradient(#e0f2fe 4px, transparent 4px);
+            background-size: 36px 36px;
+            color: #0c4a6e;
+            overflow-x: hidden;
+        }
+        .cute-card {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            box-shadow: 0 12px 35px rgba(14,165,233,0.2);
+            border: 4px solid #ffffff;
+        }
+        .cute-btn {
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+            color: #ffffff;
+            font-weight: 700;
+            border-radius: 999px;
+            box-shadow: 0 8px 20px rgba(14,165,233,0.4);
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+            border: 3px solid #ffffff;
+        }
+        .cute-btn:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 25px rgba(14,165,233,0.6); }
+        .cute-btn:active { transform: translateY(2px); }
+        .cute-btn-disabled { background:#f1f5f9; color:#94a3b8; box-shadow:none; cursor:not-allowed; border-color:#e2e8f0; transform:none !important; }
+        .cute-input { border:3px solid #e0f2fe; border-radius:16px; padding:14px; transition:all 0.3s; background:#fff; }
+        .cute-input:focus { outline:none; border-color:#38bdf8; box-shadow:0 0 0 5px rgba(56,189,248,0.3); }
+        .player-item { transition:all 0.2s cubic-bezier(0.4,0,0.2,1); border:2px solid transparent; }
+        .player-item.selected { background:#e0f2fe; border-color:#7dd3fc; color:#0369a1; transform:scale(1.03); box-shadow:0 6px 15px rgba(14,165,233,0.2); }
+        .player-item.disabled { opacity:0.5; cursor:not-allowed; background:transparent; }
+        .player-item:not(.selected):not(.disabled):hover { background:#f0f9ff; border-color:#bae6fd; transform:translateX(6px); }
+        .match-card { background:white; border:4px solid #e0f2fe; border-radius:24px; box-shadow:0 8px 20px rgba(14,165,233,0.15); transition:transform 0.2s, box-shadow 0.2s; z-index:10; }
+        .match-card:hover { transform:translateY(-4px) scale(1.02); box-shadow:0 12px 30px rgba(14,165,233,0.3); border-color:#bae6fd; }
+        .match-player { transition:background-color 0.2s, color 0.2s; cursor:pointer; }
+        .match-player.winner { background-color:#e0f2fe; color:#0369a1; }
+        .match-player.loser { opacity:0.4; text-decoration:line-through; background-color:#f8fafc; }
+        .match-player:hover:not(.winner):not(.empty) { background-color:#f0f9ff; }
+        .pop-in { animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards; opacity:0; transform:scale(0.9) translateY(10px); }
+        @keyframes popIn { to { opacity:1; transform:scale(1) translateY(0); } }
+        .custom-scrollbar::-webkit-scrollbar { width:8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background:#f0f9ff; border-radius:10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background:#7dd3fc; border-radius:10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background:#38bdf8; }
+        .champion-crowned { transform:scale(1.2) translateY(-5px); z-index:50 !important; border-color:#fcd34d !important; background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%) !important; box-shadow:0 20px 40px rgba(251,191,36,0.4),0 0 30px rgba(251,191,36,0.6) !important; animation:popCrown 0.6s cubic-bezier(0.175,0.885,0.32,1.275) forwards, glowCrown 2s infinite alternate !important; }
+        .champion-crowned-text { color:#b45309 !important; }
+        .champion-crowned-icon { animation:bounceEmoji 1s infinite alternate; }
+        @keyframes popCrown { 0%{transform:scale(1) translateY(0);} 50%{transform:scale(1.3) translateY(-10px);} 100%{transform:scale(1.2) translateY(-5px);} }
+        @keyframes glowCrown { from{box-shadow:0 15px 35px rgba(251,191,36,0.4),0 0 20px rgba(251,191,36,0.3);} to{box-shadow:0 25px 45px rgba(251,191,36,0.6),0 0 50px rgba(251,191,36,0.8);} }
+        @keyframes bounceEmoji { from{transform:translateY(0);} to{transform:translateY(-10px);} }
+    </style>
+</head>
+<body class="min-h-screen text-slate-700 pb-10 flex flex-col">
+<header class="bg-white/90 backdrop-blur-md border-b-4 border-sky-100 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-2 text-sky-600 font-bold text-xl cursor-pointer" onclick="resetApp()">
+            <span class="text-2xl">🌊</span>
+            <span>晴空藍賽程產生器 ✨</span>
+        </div>
+        <div id="nav-steps" class="hidden sm:flex items-center space-x-3 text-sm font-bold text-sky-300">
+            <span id="nav-step-1" class="text-sky-600">1️⃣ 設定名單 📝</span>
+            <span>👉</span>
+            <span id="nav-step-2">2️⃣ 幸運小組賽 🍀</span>
+            <span>👉</span>
+            <span id="nav-step-3">3️⃣ 最終決戰 👑</span>
+        </div>
+    </div>
+</header>
+<main id="app-container" class="w-full flex-1 flex flex-col max-w-7xl mx-auto px-4 py-8"></main>
+
+<script>
+// ===== 參賽者資料庫 =====
+const STUDENT_DB = {
+"1A":[["陳熹雋",1],["陳意衡",2],["陳彥君",3],["陳楚皓",4],["陳彥羲",5],["侯林菲",6],["許皓琳",7],["黃煜軒",8],["關旨荇",9],["劉卓瀅",10],["劉仲宇",11],["羅卓熙",12],["李芯悦",13],["呂俊霖",14],["呂仲軒",15],["吳諾兒",16],["彭梓悦",17],["施鈞源",18],["孫子豪",19],["曾以仁",20],["曹正",21],["王天宇",22],["王柏諾",23],["胡悦翹",24]],
+"1B":[["陳曉瑩",1],["陳梓韜",2],["陳永昇",3],["陳悅心",4],["張峻烽",5],["蔡宏鑫",6],["朱灝喆",7],["何允恒",8],["韓欣穎",9],["叶宇恒",10],["江泳琳",11],["關明菲",12],["鄺雪晴",13],["劉芊汝",14],["羅復希",15],["李俊霆",16],["李鎧",17],["梁凱淇",18],["巫恒逸",19],["柯芷晴",20],["蘇智泓",21],["曾鋭彬",22],["尹梓言",23],["胡梓榣",24],["丘文博",25],["朱鑠穎",26]],
+"1C":[["歐陽子朗",1],["周柏橋",2],["鄭浚東",3],["張洛頤",4],["張允謙",5],["朱善鋐",6],["洪永灃",7],["葉愷晴",8],["江澤楷",9],["江泳婷",10],["郭曉靜",11],["林芊玥",12],["劉子儀",13],["李卓諾",14],["李柏翱",15],["梁心巧",16],["梁逸熹",17],["危逸辰",18],["潘承鈞",19],["蕭雨彤",20],["譚愷瑤",21],["譚丞竣",22],["田晞潼",23],["王樂澄",24],["黃子軒",25],["王梓然",26],["葉芷晴",27]],
+"1D":[["陳振軒",1],["陳晞",2],["陳柏熹",3],["陳宏信",4],["張睎童",5],["周羲和",6],["徐朗睎",7],["方俊熹",8],["方梓喬",9],["江徽",10],["郭又嘉",11],["劉淳浠",12],["梁靖堯",13],["李祉諾",14],["林詩穎",15],["廖心瑜",16],["盧曉怡",17],["顏孝善",18],["鄧先喻",19],["鄧芷珺",20],["謝泓泰",21],["童衍嘉",22],["黃煦昡",23],["吳嘉鋭",24],["楊善雯",25],["姚芊語",26]],
+"1E":[["陳希霖",1],["陳晞瑜",2],["陳君業",3],["陳溰琳",4],["陳星宇",5],["鄭子榆",6],["馮晞童",7],["何鉦霆",8],["許正翹",9],["郭柏希",10],["郭柏喬",11],["林嘉慧",12],["羅敏芫",13],["梁天豪",14],["連尉𧧽",15],["盧心怡",16],["勞以曈",17],["莫彥博",18],["潘柏皓",19],["蔡竣軒",21],["黃晉謙",22],["黃詩淇",23],["胡凱藍",24],["顏嘉希",25],["楊樂軒",26]],
+"2A":[["陳信希",1],["陳宥銘",2],["鄒嘉柔",3],["鄭雅之",4],["張予寧",5],["馮朗華",6],["何旻蔚",7],["何梓嫣",8],["許若楠",9],["林捷然",10],["林陽曦",11],["李卓斐",12],["梁昊",13],["梁凱媃",14],["廖凱漩",15],["勞君婷",16],["馬鉦博",17],["伍灝然",18],["蕭玥呈",19],["曾恩陶",20],["王祐辰",21],["黃玳嘉",22],["黃彥熹",23],["楊旻彧",24],["葉芷藴",25]],
+"2B":[["陳雋禮",1],["陳柏霖",2],["陳瑋楠",3],["陳穎澄",4],["鄭皓文",5],["張峻僑",6],["錢玟謙",7],["鍾振耀",8],["何籽齊",9],["何芷奷",10],["林允兒",11],["劉星宇",12],["李晞雒",13],["李芯潁",14],["梁雅兒",15],["梁心怡",16],["盧靖方",17],["麥雅淇",18],["吳家賢",19],["孫鎧霖",20],["曾夢歡",21],["黃梓朗",22],["謝樂懿",23],["嚴敏瑜",24],["余芊潼",25]],
+"2C":[["陳家博",1],["陳佰僑",2],["陳楚伊",3],["鄭懿睿",4],["張芷僑",5],["張日曦",6],["蔡子言",7],["朱晉賢",8],["朱詠珊",9],["鍾禮賢",10],["侯佩兒",11],["管諾賢",12],["郭昊洋",13],["黎子謙",14],["劉昊均",15],["劉浚鋐",16],["李諾頤",17],["梁琋雯",18],["林新珊",19],["劉梓潼",20],["吳綽瀅",21],["譚紫寧",22],["王羨妤",23],["黃庭謙",24],["鍾浩鈱",25],["許天泓",26]],
+"2D":[["區晉樑",1],["陳瀞希",2],["陳凱淳",3],["陳鎧賢",4],["張鈞琳",5],["馮凱琳",6],["林雅雯",7],["林蔣沂",8],["劉玥澄",9],["羅浩言",10],["李溵喬",11],["梁澤仁",12],["李靖頤",13],["林烱烽",14],["呂綽瑤",15],["毛羿巽",16],["吳憲峰",17],["石芮霖",18],["曾禮賢",19],["王儒悦",20],["胡錦天",21],["王暟瞳",22],["胡梓筠",23],["伍彥潮",24],["余思穎",25]],
+"2E":[["歐希彤",1],["陳梓昊",2],["陳芷琳",3],["張司宇",4],["張煒傑",5],["張恩僑",6],["趙浩軒",7],["戴嘉瑩",8],["嚴崇灝",9],["葉文晞",10],["黎爾澄",11],["黎爾謙",12],["梁栢睿",13],["李依娜",14],["連珝㞩",15],["巫倬鋒",16],["戴晞然",17],["譚竣軒",18],["鄧康瑤",19],["黃千睿",20],["黃寶儀",21],["黃梓謙",22],["吳妤諳",23],["葉美琳",24],["朱晨曦",25]],
+"3A":[["陳家淳",1],["張薾晨",2],["張景軒",3],["何沛靈",4],["何韻瀅",5],["關羨錤",6],["林善瑩",7],["李朗棋",8],["李庭欣",9],["梁可榆",10],["林雅婷",11],["吳智琛",12],["吳愷恩",13],["吳葉恆",14],["歐航瑋",15],["蘇逸朗",16],["施善文",17],["唐婉宜",18],["曾卓謙",19],["黃頌謙",20],["王煦霖",21],["黃贊殷",22],["黃一陽",23],["胡蓁翹",24],["余沛凝",25]],
+"3B":[["陳浠婷",1],["陳灝斌",2],["張樾",3],["蔡海澄",4],["周望舒",5],["鄧渲穎",6],["熊梓喬",7],["關詠琳",8],["黎熙桐",9],["林柏宇",10],["劉瀰",11],["劉柏希",12],["梁語軒",13],["馬熙雯",14],["吳思言",15],["彭映雪",16],["潘朗楷",17],["黃覓颻",18],["黃小洹",19],["黃天信",20],["王梓謙",21],["王梓穎",22],["胡凱澄",23],["邱彥楟",24],["葉栢廷",25]],
+"3C":[["陳逸朗",1],["張允嵐",2],["莊鎧溢",3],["馮卓賢",4],["郭睿捷",5],["簡芷桐",6],["林善晴",7],["林紫堯",8],["劉睿軒",9],["李祉誼",10],["連信言",11],["廖望正",12],["羅啟晉",13],["蕭梓淇",14],["孫苡澄",15],["施靜嵐",16],["鄧允然",17],["曾天佑",18],["王煦霆",19],["黃家熙",20],["胡善之",21],["楊樂昕",22],["葉愷晴",23],["葉蘊瑤",24],["庾凱舒",25]],
+"3D":[["陳晉燊",1],["陳思霖",2],["鍾俊賢",3],["戴沛銘",4],["何韻妍",5],["黎允皓",6],["黎昕潼",7],["林心賢",8],["李紫盈",9],["梁澤栩",10],["梁詩諾",11],["梁圓圓",12],["連家晴",13],["林晴嵐",14],["陸穎琳",15],["龍允澄",16],["顏沛怡",17],["潘景康",18],["潘睿晞",19],["施澤仁",20],["戴焯言",21],["杜國維",22],["黃子俊",23],["楊靖泓",24],["楊心蕊",25]],
+"3E":[["查奕森",1],["陳詠芯",2],["陳殷霆",3],["陳雨晴",4],["周穎熙",5],["鄭芷瀅",6],["張閔程",7],["霍柏彥",8],["葉亦翔",9],["黎昕澄",10],["利卓羽",11],["李芊澄",12],["梁卓謙",13],["李俊賢",14],["李凱澄",15],["羅德蔚",16],["吳泳姸",17],["潘承耀",18],["譚沛林",19],["黃頌然",20],["胡旻慧",21],["胡嘉濠",22],["楊靖",23],["鄭雅予",24]],
+"4A":[["陳卓瑩",1],["陳信佑",2],["陳靖欣",3],["鄭多宏",4],["張綽祐",5],["朱沛翹",6],["方梓晴",7],["康柏熙",8],["許珮筠",9],["許紫桐",10],["洪鎮堯",11],["簡希而",12],["林泳桐",13],["李淽玥",14],["李廷熙",15],["梁家浠",16],["陸思慧",17],["梁澤琛",18],["麥梓琳",19],["吳子睿",20],["柯溍貽",21],["潘奕匡",22],["潘奕霖",23],["湯梓峰",24],["黃知恩",25],["黃浚銘",26],["吳婧言",27],["吳婧煊",28],["吳思博",29],["余孝賢",30],["袁浚熙",31]],
+"4B":[["陳奕廷",1],["鄭朗軒",2],["張渼偲",3],["張子浩",4],["賀致堯",5],["何旻蒑",6],["許皓泓",7],["林奕仲",8],["林玥瑩",9],["劉映汝",10],["羅瑋霖",11],["李瑋澄",12],["梁景熹",13],["梁詠欣",14],["梁漪桓",15],["李樂懿",16],["梁恩浠",17],["羅鎧晴",18],["呂清妍",19],["馬昊燊",20],["湯鎮銘",21],["田晞樂",22],["唐嘉禧",23],["尹樂恩",24],["王梓琪",25],["王熙雯",26],["王汶僖",27],["吳子朗",28],["邱家樂",29],["邱彥竣",30],["楊子渘",31]],
+"4C":[["陳見之",1],["陳樂熙",2],["錢巧霖",3],["蔡清妍",4],["蔡焌軒",5],["周彥彤",6],["關宗灝",7],["奚梓麟",8],["鄧諾文",9],["郭俞彤",10],["賴至誠",11],["黎祉樂",12],["林國言",13],["李昕熹",14],["梁晞妍",15],["梁宇霆",16],["吳卓言",17],["吳沛珊",18],["譚安喬",19],["曾宇哲",20],["黃寶謙",21],["楊心妤",22],["楊穎芯",23],["楊祐安",24]],
+"4D":[["陳俊凱",1],["陳彥彤",2],["鄭丞超",3],["鄭穎恆",4],["張榆澄",5],["朱俊朗",6],["洪力蔭",7],["林泳彤",8],["劉芷瑤",9],["李洋愷",10],["梁芷悠",11],["蘇俊皓",12],["施明雅",13],["戴焯諾",14],["譚楚桐",15],["湯詠賢",16],["曹子玥",17],["黃琸舜",18],["黃天嵐",19],["黃逸翹",20],["楊晟軒",21],["楊景匡",22],["邢維丞",23],["翁奕琳",24]],
+"4E":[["區竣睎",1],["陳凱珮",2],["陳詩穎",3],["陳彥希",4],["鄒家謙",5],["鄭子諾",6],["張浚杭",7],["何敏嘉",8],["羅卓謙",9],["盧佳琪",10],["伍偉庭",11],["柯鈞諾",12],["潘英貴",13],["蘇凱潼",14],["謝心弦",15],["黃嘉欣",16],["黃柏陶",17],["黃梓晴",18],["黃子誠",19],["吳思橋",20]],
+"5A":[["陳頌錡",1],["陳淏揚",2],["陳滶銘",3],["陳思羽",4],["鄭婥妤",5],["趙恩彤",6],["曹子錀",7],["蔡子瑩",8],["何思齊",9],["郭靜瑩",10],["郭幸兒",11],["郭君睿",12],["林迪文",13],["梁卓然",14],["李顯揚",15],["李星慧",16],["羅泳雅",17],["盧妍孜",18],["呂洛恒",19],["馬曉晴",20],["馬梓崴",21],["歐恩貝",22],["邱芊羽",23],["譚知行",24],["鄧司鉉",25],["曾靖嵐",26],["曾柏軒",27],["吳金麟",28],["胡定駱",29],["楊玥瑩",30],["翁浚皓",31],["張銘曉",32]],
+"5B":[["陳子悠",1],["周雋希",2],["鄭儲邦",3],["莊浠瑩",4],["夏子弘",5],["賀子宸",6],["許峻灝",7],["林浩軒",8],["林嘉敏",9],["李卓珈",10],["李俊逸",11],["李朗達",12],["李宇謙",13],["李加敏",14],["李允捷",15],["廖幸兒",16],["劉可兒",17],["吳朗瑜",18],["伍慧珊",19],["岑可翹",20],["孫銘浠",21],["譚棨燊",22],["譚應軒",23],["曾慶洛",24],["黃卓妤",25],["黃承晞",26],["黃梓欣",27],["黃詠心",28],["袁崇曦",29],["周梓瑜",30]],
+"5C":[["陳熹姸",1],["陳瑋灝",2],["陳昱霖",3],["鄭哲",4],["張嘉妤",5],["鄒卓喬",6],["鄺可喬",7],["黎凱甄",8],["黎子鏗",9],["林思彤",10],["劉佩祺",11],["劉芷萱",12],["李思瑤",13],["盧鴻宇",14],["盧思羽",15],["曾瀚賢",16],["徐羨喬",17],["黃琸堯",18],["黃芯諾",19],["黃維博",20],["黃雨桐",21],["胡啓湸",22],["胡倩瑋",23],["楊舜之",24]],
+"5D":[["陳凱恩",1],["陳立喬",2],["陳敏軒",3],["陳茂凱",4],["鄭奕飛",5],["錢凱晴",6],["蔡俊添",7],["周青陽",8],["周瑞蕎",9],["鍾禮謙",10],["戴嘉禧",11],["何靖喬",12],["何芷源",13],["郭臨",14],["林家而",15],["林健銘",16],["李卓穎",17],["李凱宇",18],["馬綽嬣",19],["馬琝傑",20],["馬恩悦",21],["莫梓妤",22],["吳芷盈",23],["伍思妍",24],["葉思朗",25],["楊若萱",26]],
+"5E":[["陳駿豪",1],["陳芝敏",2],["張怡禎",3],["張怡萱",4],["蔡卓翹",5],["方栢宇",6],["符碩軒",7],["何家瑩",8],["黃健彬",9],["許悅",10],["林思辰",11],["林禹軒",12],["羅婉瑩",13],["李翊行",14],["梁心盈",15],["李姵賢",16],["麥俊仁",17],["譚暘霖",18],["黃晉熹",19],["王晧恩",20],["邱炫智",21],["楊浩程",22]],
+"6A":[["陳泓俊",1],["陳思成",2],["張綽軒",3],["張筱攸",4],["程頌兒",5],["周芷萱",6],["周子祐",7],["馮智譽",8],["許樂媛",9],["許心淇",10],["洪巧恩",11],["龔均曈",12],["黎鐘澤",13],["賴家敏",14],["黎子芊",15],["黎子萱",16],["劉天溵",17],["梁晨",18],["梁詠嵐",19],["李俊禧",20],["李樂怡",21],["林煇皓",22],["廖望哲",23],["吳承熹",24],["潘茵彤",25],["蕭梓諾",26],["蕭仲言",27],["施瀛鈞",28],["鄧旨峻",29],["黃卓文",30],["黃苡喬",31],["吳子君",32],["鄭力中",33]],
+"6B":[["區永揚",1],["陳宏瑋",2],["張浚一",3],["張駿朗",4],["張凱晴",5],["張凱喬",6],["張梓淳",7],["張芷熒",8],["蔡卓侖",9],["鍾希兒",10],["方心預",11],["何沛陞",12],["葉景軒",13],["郭千琬",14],["郭倚彤",15],["林樂恩",16],["劉康佑",17],["李曉琳",18],["李瀚泓",19],["林奕澍",20],["羅琸嵐",21],["龍洛蜂",22],["曾梓傑",23],["蔡永匡",24],["尹佟恩",25],["黃希瞳",26],["黃可頤",27],["黃贊臣",28],["黃偉睿",29],["吳璟悠",30]],
+"6C":[["陳鎧廷",1],["陳欣彤",2],["周啟豪",3],["鄭凱沂",4],["張梓烽",5],["趙梓希",6],["趙慧喬",7],["許願",8],["林汶進",9],["羅嘉悠",10],["李智庭",11],["梁雲姿",12],["李芊慧",13],["羅曦婷",14],["伍君昊",15],["鄧鈞朗",16],["黃駿佑",17],["黃思澄",18],["吳政鋭",19],["袁凱霖",20],["翁奕熙",21]],
+"6D":[["陳芷瑜",1],["張浩揚",2],["張晨曦",3],["張映澄",4],["鄒本騫",5],["鍾峻熙",6],["柯繼然",7],["江俊曦",8],["郭甯",9],["林昱丞",10],["李湚頤",11],["梁文晞",12],["李悅曦",13],["呂柏軒",14],["沙婉如",15],["譚紫悦",16],["鄧宇政",17],["丁健悠",18],["董穎天",19],["黃健朗",20],["胡浚鴻",21]],
+"6E":[["陳倚盈",1],["陳宇軒",2],["鄭瑞豐",3],["張晞瑜",4],["張梓希",5],["林曉婷",6],["林梓慧",7],["李承禧",8],["李家興",9],["林新杰",10],["雷梓希",11],["吳綽鎧",12],["王鳳賢",13],["王國南",14],["黃致肇",15],["黃鎮熙",16],["黃振庭",17],["楊希昕",18],["葉子逸",19]]
+};
+
+// 年級群組
+const GRADE_MAP = {
+    "P1": ["1A","1B","1C","1D","1E"],
+    "P2": ["2A","2B","2C","2D","2E"],
+    "P3": ["3A","3B","3C","3D","3E"],
+    "P4": ["4A","4B","4C","4D","4E"],
+    "P5": ["5A","5B","5C","5D","5E"],
+    "P6": ["6A","6B","6C","6D","6E"]
+};
+
+const ALL_CLASSES = Object.keys(STUDENT_DB);
+
+// ===== 狀態管理 =====
+const STORAGE_KEY = 'dreamy_tournament_participants_v4';
+let isDefaultList = false;
+function loadParticipants() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) { isDefaultList = false; return JSON.parse(saved); }
+    } catch(e) {}
+    isDefaultList = true;
+    return [];
+}
+function saveParticipants() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.participants));
+}
+const state = {
+    stage: 'setup',
+    participants: loadParticipants(),
+    numGroups: 8,
+    qualifiersPerGroup: 1,
+    groups: [],
+    selectedQualifiers: {},
+    bracketRounds: [],
+    champion: null,
+    isRolling: false,
+    isBracketRolling: false,
+    bracketScale: 1
+};
+const availableQualifiers = { 2:[1,2,4], 4:[1,2], 8:[1] };
+const appContainer = document.getElementById('app-container');
+
+function init() {
+    render();
+    appContainer.addEventListener('click', handleGlobalClick);
+    window.addEventListener('resize', () => {
+        if (state.stage === 'bracket') { drawBracketLines(); fitBracket(); }
+    });
+}
+
+function handleGlobalClick(e) {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+    const action = target.dataset.action;
+    if (action === 'generate-groups') {
+        handleGenerateGroups();
+    } else if (action === 'toggle-qualifier') {
+        if (state.isRolling) return;
+        toggleQualifier(parseInt(target.dataset.gidx), target.dataset.name);
+    } else if (action === 'generate-bracket') {
+        handleGenerateBracket();
+    } else if (action === 'set-winner') {
+        if (state.isBracketRolling) return;
+        handleMatchWinnerClick(parseInt(target.dataset.ridx), parseInt(target.dataset.midx), parseInt(target.dataset.player));
+    } else if (action === 'reset') {
+        resetApp();
+    } else if (action === 'add-by-dropdown') {
+        handleAddByDropdown();
+    } else if (action === 'add-custom') {
+        handleAddCustom();
+    } else if (action === 'remove-participant') {
+        isDefaultList = false;
+        state.participants.splice(parseInt(target.dataset.idx), 1);
+        saveParticipants();
+        render(true);
+    } else if (action === 'clear-participants') {
+        if (confirm('確定要清空所有的參賽者名單嗎？ 🥺')) {
+            isDefaultList = false;
+            state.participants = [];
+            saveParticipants();
+            render(true);
+        }
+    }
+}
+
+function updateNav() {
+    const s1 = document.getElementById('nav-step-1');
+    const s2 = document.getElementById('nav-step-2');
+    const s3 = document.getElementById('nav-step-3');
+    if (!s1) return;
+    s1.className = s2.className = s3.className = 'text-sky-300';
+    if (state.stage === 'setup')   s1.className = 'text-sky-600 transition-colors transform scale-105';
+    if (state.stage === 'groups')  s2.className = 'text-sky-600 transition-colors transform scale-105';
+    if (state.stage === 'bracket') s3.className = 'text-sky-600 transition-colors transform scale-105';
+}
+
+function handleAddByDropdown() {
+    const sel = document.getElementById('select-class-add');
+    if (!sel) return;
+    const val = sel.value;
+    if (!val || val === '__placeholder__') return;
+
+    let newNames = [];
+    if (GRADE_MAP[val]) {
+        // 年級 P1-P6
+        GRADE_MAP[val].forEach(cls => {
+            (STUDENT_DB[cls] || []).forEach(([name]) => {
+                newNames.push(`${cls} ${name}`);
+            });
+        });
+    } else if (STUDENT_DB[val]) {
+        // 單一班別：顯示「學號 姓名」
+        STUDENT_DB[val].forEach(([name, num]) => {
+            newNames.push(`${num} ${name}`);
+        });
+    }
+
+    if (newNames.length > 0) {
+        if (isDefaultList) {
+            state.participants = newNames;
+            isDefaultList = false;
+        } else {
+            state.participants = [...state.participants, ...newNames];
+        }
+        saveParticipants();
+        render(true);
+    }
+}
+
+function handleAddCustom() {
+    const ta = document.getElementById('input-custom-participants');
+    if (!ta || !ta.value.trim()) return;
+    const newNames = ta.value.split('\n').map(n => n.trim()).filter(n => n !== '');
+    if (newNames.length > 0) {
+        if (isDefaultList) {
+            state.participants = newNames;
+            isDefaultList = false;
+        } else {
+            state.participants = [...state.participants, ...newNames];
+        }
+        saveParticipants();
+        render(true);
+        setTimeout(() => {
+            const el = document.getElementById('input-custom-participants');
+            if (el) { el.value = ''; el.focus(); }
+        }, 10);
+    }
+}
+
+function handleSelectChange() {
+    const sel = document.getElementById('select-class-add');
+    const customArea = document.getElementById('custom-input-area');
+    if (!sel || !customArea) return;
+    customArea.style.display = sel.value === '__custom__' ? 'flex' : 'none';
+}
+
+/* =========================================================
+   階段 1: 設定
+========================================================= */
+function renderSetup(noAnim) {
+    const allowedQualifiers = availableQualifiers[state.numGroups];
+    const animClass = noAnim ? '' : 'pop-in';
+    return `
+        <div class="max-w-2xl mx-auto w-full cute-card overflow-hidden ${animClass}">
+            <div class="bg-sky-50/80 p-6 border-b-4 border-white text-center">
+                <h2 class="text-3xl font-bold text-sky-600 tracking-wide">🌊 賽制設定 ⚙️</h2>
+                <p class="text-sky-400 font-medium mt-2">選擇班別加入參賽者，並決定分組方式 (已開啟自動儲存 💾)</p>
+            </div>
+            <div class="p-8 space-y-6">
+                <!-- 名單區 -->
+                <div>
+                    <div class="flex justify-between items-end mb-3">
+                        <label class="block text-xl font-bold text-blue-600">📝 參賽者名單</label>
+                        <div class="flex items-center space-x-3">
+                            <button data-action="clear-participants" class="text-sm font-bold text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 border-2 border-red-100 px-4 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1">
+                                🗑️ 清空
+                            </button>
+                            <span class="text-sm font-bold text-slate-500 bg-sky-50 border-2 border-sky-100 px-4 py-1.5 rounded-full shadow-sm">
+                                總共 <span class="text-sky-600 text-lg">${state.participants.length}</span> 名勇者 🦸‍♂️
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 下拉選單行 -->
+                    <div class="flex flex-col sm:flex-row gap-3 mb-3">
+                        <select id="select-class-add" onchange="handleSelectChange()"
+                                class="flex-1 cute-input font-bold text-slate-600 cursor-pointer text-base">
+                            <option value="__placeholder__" disabled selected>── 請選擇班別 / 年級 ──</option>
+                            <optgroup label="📚 按年級加入">
+                                <option value="P1">P1（一年級全體）</option>
+                                <option value="P2">P2（二年級全體）</option>
+                                <option value="P3">P3（三年級全體）</option>
+                                <option value="P4">P4（四年級全體）</option>
+                                <option value="P5">P5（五年級全體）</option>
+                                <option value="P6">P6（六年級全體）</option>
+                            </optgroup>
+                            <optgroup label="🏫 按班別加入">
+                                ${ALL_CLASSES.map(c => `<option value="${c}">${c}</option>`).join('')}
+                            </optgroup>
+                            <optgroup label="✏️ 自行輸入">
+                                <option value="__custom__">✏️ 自訂名單</option>
+                            </optgroup>
+                        </select>
+                        <button data-action="add-by-dropdown"
+                                class="bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-bold rounded-2xl px-6 py-3 sm:py-0 transition-all shadow-md flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 whitespace-nowrap">
+                            <span class="text-xl">➕</span><span>加入名單</span>
+                        </button>
+                    </div>
+
+                    <!-- 自訂輸入區（預設隱藏） -->
+                    <div id="custom-input-area" class="hidden flex-col sm:flex-row gap-3 mb-3">
+                        <textarea
+                            id="input-custom-participants"
+                            class="flex-1 min-h-[70px] cute-input font-medium text-slate-600 resize-y leading-relaxed text-sm"
+                            placeholder="每行輸入一個名稱，例如：&#10;1A 陳小明&#10;2B 李大文"></textarea>
+                        <button data-action="add-custom"
+                                class="bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-500 hover:to-cyan-600 text-white font-bold rounded-2xl px-6 py-3 sm:py-0 transition-all shadow-md flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 whitespace-nowrap">
+                            <span class="text-xl">✅</span><span>確認加入</span>
+                        </button>
+                    </div>
+
+                    <!-- 名單標籤區 -->
+                    <div class="bg-white/60 border-2 border-sky-100 rounded-3xl p-5 min-h-[160px] max-h-[300px] overflow-y-auto flex flex-wrap content-start gap-2 shadow-inner custom-scrollbar">
+                        ${state.participants.map((p, idx) => `
+                            <div class="inline-flex items-center bg-white border-2 border-sky-200 text-sky-700 rounded-full pl-4 pr-1.5 py-1.5 font-bold shadow-sm transition-all hover:scale-105 hover:border-sky-400 hover:shadow-md">
+                                <span class="truncate max-w-[160px] text-[14px]">${p}</span>
+                                <button data-action="remove-participant" data-idx="${idx}"
+                                        class="ml-2 w-6 h-6 flex items-center justify-center rounded-full bg-sky-50 text-sky-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer text-xs">✖</button>
+                            </div>
+                        `).join('')}
+                        ${state.participants.length === 0 ? `
+                            <div class="text-slate-400 w-full text-center py-12 font-medium flex flex-col items-center gap-3">
+                                <span class="text-4xl opacity-50">👻</span>
+                                <span>請從上方下拉選單選取班別或年級以加入參賽者！</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- 賽制選項 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-blue-50/50 border-2 border-blue-100 p-6 rounded-3xl">
+                    <div>
+                        <label class="block text-lg font-bold text-blue-600 mb-2">📦 幫我分成幾組？</label>
+                        <select id="select-num-groups" class="w-full cute-input font-bold text-slate-600 cursor-pointer text-center text-lg">
+                            <option value="2" ${state.numGroups===2?'selected':''}>✌️ 2 組</option>
+                            <option value="4" ${state.numGroups===4?'selected':''}>🍀 4 組</option>
+                            <option value="8" ${state.numGroups===8?'selected':''}>🐙 8 組</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-lg font-bold text-blue-600 mb-2">⭐ 每組幾人晉級？</label>
+                        <select id="select-qualifiers" class="w-full cute-input font-bold text-slate-600 cursor-pointer text-center text-lg">
+                            ${allowedQualifiers.map(num=>`<option value="${num}" ${state.qualifiersPerGroup===num?'selected':''}>🔥 ${num} 人</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="text-center py-3 bg-white border-2 border-sky-100 rounded-2xl shadow-sm">${getPreviewHtml()}</div>
+                <button data-action="generate-groups" class="w-full py-4 cute-btn text-xl tracking-widest flex items-center justify-center space-x-3 mt-4">
+                    <span>🎲 隨機分配小組賽！ GO! 🚀</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function getPreviewHtml() {
+    const total = state.numGroups * state.qualifiersPerGroup;
+    const finalStage = total===8?'8強賽 🏆':total===4?'4強賽 ⚔️':'決賽 👑';
+    return `<p class="font-bold text-slate-500 text-lg">
+        💡 將選出 <span class="text-sky-600 font-bold text-2xl mx-1">${total}</span> 名出線者，直接進入 <span class="text-sky-600 font-bold text-2xl mx-1">${finalStage}</span>
+    </p>`;
+}
+
+function render(noAnim=false) {
+    updateNav();
+    if (state.stage==='setup') {
+        appContainer.innerHTML = renderSetup(noAnim);
+        document.getElementById('select-num-groups').addEventListener('change', e => {
+            state.numGroups = parseInt(e.target.value);
+            const allowed = availableQualifiers[state.numGroups];
+            if (!allowed.includes(state.qualifiersPerGroup)) state.qualifiersPerGroup = allowed[0];
+            render(true);
+        });
+        document.getElementById('select-qualifiers').addEventListener('change', e => {
+            state.qualifiersPerGroup = parseInt(e.target.value);
+            render(true);
+        });
+    } else if (state.stage==='groups') {
+        appContainer.innerHTML = renderGroups(noAnim);
+        if (state.isRolling) startRollingAnimation();
+    } else if (state.stage==='bracket') {
+        appContainer.innerHTML = renderBracket(noAnim);
+        requestAnimationFrame(() => {
+            drawBracketLines(); fitBracket();
+            if (state.isBracketRolling) startBracketRollingAnimation();
+        });
+    }
+}
+
+function handleGenerateGroups() {
+    const names = [...state.participants];
+    const requiredTotal = state.numGroups * state.qualifiersPerGroup;
+    if (names.length < requiredTotal) {
+        alert(`哎呀 🥺！目前設定需要 ${requiredTotal} 名出線者，但名單只有 ${names.length} 名參賽者，請繼續新增喔！`);
+        return;
+    }
+    const shuffledNames = [...names].sort(()=>Math.random()-0.5);
+    state.groups = Array.from({length:state.numGroups}, ()=>[]);
+    shuffledNames.forEach((name,i) => state.groups[i%state.numGroups].push(name));
+    state.selectedQualifiers = {};
+    state.stage = 'groups';
+    state.isRolling = true;
+    render();
+}
+
+/* =========================================================
+   階段 2: 小組賽
+========================================================= */
+function renderGroups(noAnim) {
+    const totalRequired = state.numGroups * state.qualifiersPerGroup;
+    let currentSelectedCount = 0;
+    for (let i=0; i<state.numGroups; i++) currentSelectedCount += (state.selectedQualifiers[i]||[]).length;
+    const isAllSelected = currentSelectedCount===totalRequired && !state.isRolling;
+    const topAnim = noAnim?'':'pop-in';
+    let html = `
+        <div class="${topAnim} flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div>
+                <h2 class="text-3xl font-bold text-sky-600 tracking-wide">🍀 幸運小組賽名單</h2>
+                <p class="text-blue-400 font-medium mt-2">請點擊名單選擇出線者 👆（每組需選出 ${state.qualifiersPerGroup} 人喔！）</p>
+            </div>
+            <button data-action="reset" class="px-5 py-2.5 rounded-full font-bold text-slate-400 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:text-sky-500 transition-all shadow-sm flex items-center gap-2">
+                🐾 回到設定
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 w-full">
+    `;
+    state.groups.forEach((group, gIdx) => {
+        const selected = state.selectedQualifiers[gIdx]||[];
+        const isComplete = selected.length===state.qualifiersPerGroup;
+        const cardAnim = noAnim?'':'pop-in';
+        const styleStr = noAnim?'':`style="animation-delay:${gIdx*0.05}s;animation-fill-mode:both;"`;
+        const headerBg = isComplete&&!state.isRolling?'bg-blue-100 border-blue-200':'bg-sky-50 border-sky-100';
+        const titleColor = isComplete&&!state.isRolling?'text-blue-700':'text-sky-600';
+        html += `
+            <div class="cute-card overflow-hidden flex flex-col ${cardAnim}" ${styleStr}>
+                <div class="p-4 border-b-4 ${headerBg} flex items-center justify-between transition-colors">
+                    <h3 class="font-bold text-xl ${titleColor}">第 ${gIdx+1} 組 🎪</h3>
+                    <span class="text-sm font-bold ${isComplete&&!state.isRolling?'text-blue-700':'text-slate-400'} bg-white px-3 py-1 rounded-full shadow-sm border-2 border-white">
+                        ${selected.length} / ${state.qualifiersPerGroup}
+                    </span>
+                </div>
+                <div class="p-4 flex-1 bg-white/50"><ul class="space-y-3">
+        `;
+        group.forEach(player => {
+            const isSelected = selected.includes(player);
+            const isDisabled = state.isRolling || (!isSelected && selected.length>=state.qualifiersPerGroup);
+            let itemClass = "player-item w-full text-left px-4 py-3 rounded-2xl font-bold flex items-center justify-between text-base ";
+            if (state.isRolling) itemClass += "bg-white text-slate-400 border-2 border-slate-100 shadow-sm opacity-80 cursor-wait";
+            else if (isSelected) itemClass += "selected";
+            else if (isDisabled) itemClass += "disabled bg-slate-50 text-slate-400 border-2 border-transparent";
+            else itemClass += "bg-white text-slate-600 shadow-sm border-2 border-sky-50";
+            const content = state.isRolling
+                ? `<span class="truncate pr-2 rolling-name" data-final-name="${player}">🎲 隨機抽取中...</span>`
+                : `<span class="truncate pr-2">${isSelected?'💙':'👤'} ${player}</span>${isSelected?'<span class="text-sky-500 text-xl">✨</span>':''}`;
+            html += `<li><button data-action="toggle-qualifier" data-gidx="${gIdx}" data-name="${player}" class="${itemClass}" ${isDisabled?'disabled':''}>${content}</button></li>`;
+        });
+        html += `</ul></div></div>`;
+    });
+    const btnAnim = noAnim?'':'pop-in';
+    const btnStyle = noAnim?'':`style="animation-delay:0.4s;animation-fill-mode:both;"`;
+    html += `
+        </div>
+        <div class="flex justify-center pb-6 w-full ${btnAnim}" ${btnStyle}>
+            <button data-action="generate-bracket" class="py-4 px-12 text-xl flex items-center space-x-3 ${isAllSelected?'cute-btn':'cute-btn cute-btn-disabled'}">
+                <span>⚔️ 產生淘汰賽晉級圖！ 🚀</span>
+            </button>
+        </div>
+    `;
+    return html;
+}
+
+function startRollingAnimation() {
+    const namesPool = [...state.participants];
+    const rollers = Array.from(document.querySelectorAll('.rolling-name'));
+    let activeRollers = [...rollers];
+    const intervalId = setInterval(() => {
+        activeRollers.forEach(el => { el.innerText = '🎲 ' + namesPool[Math.floor(Math.random()*namesPool.length)]; });
+    }, 40);
+    rollers.forEach((el,index) => {
+        setTimeout(() => {
+            activeRollers = activeRollers.filter(r=>r!==el);
+            el.innerText = '👤 ' + el.dataset.finalName;
+            el.classList.remove('rolling-name');
+            if (activeRollers.length===0) { clearInterval(intervalId); state.isRolling=false; render(true); }
+        }, 400+(index*80));
+    });
+}
+
+function toggleQualifier(gIdx, name) {
+    const currentSelected = state.selectedQualifiers[gIdx]||[];
+    if (currentSelected.includes(name)) state.selectedQualifiers[gIdx] = currentSelected.filter(n=>n!==name);
+    else if (currentSelected.length < state.qualifiersPerGroup) state.selectedQualifiers[gIdx] = [...currentSelected, name];
+    render(true);
+}
+
+function handleGenerateBracket() {
+    for (let i=0; i<state.numGroups; i++) {
+        if ((state.selectedQualifiers[i]||[]).length!==state.qualifiersPerGroup) {
+            alert(`請確認第 ${i+1} 組已經選出 ${state.qualifiersPerGroup} 位喔！ 🥺`); return;
+        }
+    }
+    const allQualifiers = Object.values(state.selectedQualifiers).flat();
+    const shuffled = [...allQualifiers].sort(()=>Math.random()-0.5);
+    const newRounds = [];
+    const firstRound = [];
+    for (let i=0; i<shuffled.length; i+=2) firstRound.push({id:`r0-m${i/2}`,p1:shuffled[i],p2:shuffled[i+1],winner:null});
+    newRounds.push(firstRound);
+    let currentMatchesCount = firstRound.length, roundIndex = 1;
+    while (currentMatchesCount>1) {
+        currentMatchesCount /= 2;
+        const round = [];
+        for (let i=0; i<currentMatchesCount; i++) round.push({id:`r${roundIndex}-m${i}`,p1:null,p2:null,winner:null});
+        newRounds.push(round); roundIndex++;
+    }
+    state.bracketRounds = newRounds;
+    state.champion = null; state.stage = 'bracket'; state.bracketScale = 1; state.isBracketRolling = true;
+    render();
+}
+
+/* =========================================================
+   階段 3: 淘汰賽
+========================================================= */
+function getRoundName(totalRounds, idx) {
+    const left = totalRounds - idx;
+    if (left===1) return "🔥 最終決賽 🔥";
+    if (left===2) return "⚔️ 準決賽";
+    if (left===3) return "🛡️ 半準決賽";
+    return `第 ${idx+1} 輪`;
+}
+
+function triggerConfetti() {
+    var dur = 3000, end = Date.now()+dur, def={startVelocity:30,spread:360,ticks:60,zIndex:100};
+    var iv = setInterval(()=>{
+        var tl = end-Date.now(); if(tl<=0) return clearInterval(iv);
+        var pc = 50*(tl/dur);
+        confetti({...def,particleCount:pc,origin:{x:Math.random()*0.2+0.1,y:Math.random()-0.2},colors:['#0ea5e9','#3b82f6','#bae6fd','#fef08a']});
+        confetti({...def,particleCount:pc,origin:{x:Math.random()*0.2+0.7,y:Math.random()-0.2},colors:['#0ea5e9','#3b82f6','#bae6fd','#fef08a']});
+    }, 250);
+}
+
+function renderBracket(noAnim) {
+    const cc = noAnim?'':'pop-in';
+    const totalRounds = state.bracketRounds.length;
+    const finalRIdx = totalRounds-1;
+    const isChamp = state.champion!==null;
+
+    const renderMatchCard = (rIdx, mIdx) => {
+        const m = state.bracketRounds[rIdx][mIdx];
+        const p1c = !m.p1?"empty":(m.winner===m.p1?"winner":(m.winner?"loser":""));
+        const p2c = !m.p2?"empty":(m.winner===m.p2?"winner":(m.winner?"loser":""));
+        let p1t, p2t;
+        if (state.isBracketRolling && rIdx===0) {
+            p1t=`<span class="truncate font-bold bracket-rolling-name" data-final-name="${m.p1||''}">🎲 隨機抽取中...</span>`;
+            p2t=`<span class="truncate font-bold bracket-rolling-name" data-final-name="${m.p2||''}">🎲 隨機抽取中...</span>`;
+        } else {
+            const t1=m.p1?'👤 '+m.p1:'<span class="text-slate-300 text-xl font-normal tracking-widest">等待晉級</span>';
+            const t2=m.p2?'👤 '+m.p2:'<span class="text-slate-300 text-xl font-normal tracking-widest">等待晉級</span>';
+            p1t=`<span class="truncate font-bold">${t1}</span><span class="text-sky-500 text-4xl ml-2 transition-opacity duration-200 ${m.winner===m.p1&&m.p1?'opacity-100':'opacity-0'}">✨</span>`;
+            p2t=`<span class="truncate font-bold">${t2}</span><span class="text-sky-500 text-4xl ml-2 transition-opacity duration-200 ${m.winner===m.p2&&m.p2?'opacity-100':'opacity-0'}">✨</span>`;
+        }
+        return `<div class="match-card relative w-72 sm:w-80 z-10 shrink-0" id="match-${rIdx}-${mIdx}">
+            <div data-action="set-winner" data-ridx="${rIdx}" data-midx="${mIdx}" data-player="1" class="match-player p-6 border-b-4 border-slate-50 flex items-center justify-between rounded-t-[20px] text-2xl sm:text-3xl ${p1c} ${!m.p1?'bg-slate-50 text-slate-400':''}">${p1t}</div>
+            <div data-action="set-winner" data-ridx="${rIdx}" data-midx="${mIdx}" data-player="2" class="match-player p-6 flex items-center justify-between rounded-b-[20px] text-2xl sm:text-3xl ${p2c} ${!m.p2?'bg-slate-50 text-slate-400':''}">${p2t}</div>
+        </div>`;
+    };
+
+    let html = `<div class="flex flex-col h-full w-full flex-1 ${cc}">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 shrink-0">
+            <div>
+                <h2 class="text-3xl font-bold text-sky-600 tracking-wide">👑 最終決戰賽程圖</h2>
+                <p class="text-blue-400 font-medium mt-2 text-sm">點擊卡片中的勝出者使其晉級 💙</p>
+            </div>
+            <button data-action="reset" class="px-5 py-2 mt-2 sm:mt-0 rounded-full font-bold text-slate-400 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:text-sky-500 transition-all shadow-sm text-sm flex items-center gap-2">🐾 重新開始</button>
+        </div>
+        <div id="bracket-viewport" class="flex-1 w-full bg-white/60 backdrop-blur-sm border-4 border-white rounded-[2rem] shadow-sm flex items-center justify-center overflow-hidden relative p-4 min-h-[600px]">
+            <div id="bracket-scale-wrapper" class="origin-center" style="transform:scale(${state.bracketScale});">
+                <div id="bracket-container" class="relative inline-flex items-center justify-center p-8 gap-12 sm:gap-20 min-w-max">
+                    <svg id="bracket-svg" class="absolute top-0 left-0 pointer-events-none z-0"></svg>`;
+
+    html += `<div class="flex items-stretch gap-12 sm:gap-20">`;
+    for (let r=0; r<finalRIdx; r++) {
+        html += `<div class="round-col flex flex-col justify-around relative gap-10">
+            <div class="absolute -top-16 w-full text-center z-20">
+                <span class="text-xl sm:text-2xl font-bold text-blue-600 bg-white border-[3px] border-blue-200 px-6 py-2 rounded-full shadow-sm whitespace-nowrap">${getRoundName(totalRounds,r)}</span>
+            </div>`;
+        const mc = state.bracketRounds[r].length;
+        for (let m=0; m<mc/2; m++) html += renderMatchCard(r,m);
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    const champBox = isChamp?'champion-crowned border-4':'bg-white border-4 border-sky-100 shadow-sm opacity-90';
+    const champTxt = isChamp?'champion-crowned-text text-5xl sm:text-6xl':'text-slate-400 text-4xl sm:text-5xl';
+    const champIcon = isChamp?'champion-crowned-icon text-8xl sm:text-9xl':'text-7xl sm:text-8xl';
+    const fm = state.bracketRounds[finalRIdx][0];
+    const fp1c = !fm.p1?"empty":(fm.winner===fm.p1?"winner":(fm.winner?"loser":""));
+    const fp2c = !fm.p2?"empty":(fm.winner===fm.p2?"winner":(fm.winner?"loser":""));
+    let fp1t, fp2t;
+    if (state.isBracketRolling && finalRIdx===0) {
+        fp1t=`<span class="truncate font-bold bracket-rolling-name" data-final-name="${fm.p1||''}">🎲 隨機抽取中...</span>`;
+        fp2t=`<span class="truncate font-bold bracket-rolling-name" data-final-name="${fm.p2||''}">🎲 隨機抽取中...</span>`;
+    } else {
+        const t1=fm.p1?'👤 '+fm.p1:'<span class="text-slate-300 text-2xl font-normal tracking-widest">等待晉級</span>';
+        const t2=fm.p2?'👤 '+fm.p2:'<span class="text-slate-300 text-2xl font-normal tracking-widest">等待晉級</span>';
+        fp1t=`<span class="truncate font-bold">${t1}</span><span class="text-sky-500 text-5xl ml-2 transition-opacity duration-200 ${fm.winner===fm.p1&&fm.p1?'opacity-100':'opacity-0'}">✨</span>`;
+        fp2t=`<span class="truncate font-bold">${t2}</span><span class="text-sky-500 text-5xl ml-2 transition-opacity duration-200 ${fm.winner===fm.p2&&fm.p2?'opacity-100':'opacity-0'}">✨</span>`;
+    }
+
+    html += `<div class="flex flex-col justify-center items-center gap-12 relative z-10 shrink-0 px-8" id="champion-col">
+        <div class="absolute -top-16 w-full text-center z-20">
+            <span class="text-2xl sm:text-3xl font-bold text-blue-600 bg-blue-50 border-[3px] border-blue-200 px-8 py-3 rounded-full shadow-sm whitespace-nowrap">${getRoundName(totalRounds,finalRIdx)}</span>
+        </div>
+        <div class="match-card relative w-80 sm:w-96 z-10 shrink-0 border-4 border-sky-300 shadow-lg rounded-[24px] overflow-hidden" id="final-p1-card">
+            <div data-action="set-winner" data-ridx="${finalRIdx}" data-midx="0" data-player="1" class="match-player p-8 flex items-center justify-between text-3xl sm:text-4xl ${fp1c} ${!fm.p1?'bg-slate-50 text-slate-400':''}">${fp1t}</div>
+        </div>
+        <div id="champion-box" class="p-10 rounded-[32px] text-center transition-all duration-500 w-80 sm:w-96 relative ${champBox}">
+            <div class="mb-4 ${champIcon}">🏆</div>
+            <div class="text-xl sm:text-2xl text-sky-400 font-bold mb-3 tracking-widest uppercase">✨ Grand Champion ✨</div>
+            <h3 class="font-black truncate ${champTxt}">${state.champion?'👑 '+state.champion:'<span class="text-slate-300 text-3xl font-normal tracking-widest">等待晉級</span>'}</h3>
+        </div>
+        <div class="match-card relative w-80 sm:w-96 z-10 shrink-0 border-4 border-sky-300 shadow-lg rounded-[24px] overflow-hidden" id="final-p2-card">
+            <div data-action="set-winner" data-ridx="${finalRIdx}" data-midx="0" data-player="2" class="match-player p-8 flex items-center justify-between text-3xl sm:text-4xl ${fp2c} ${!fm.p2?'bg-slate-50 text-slate-400':''}">${fp2t}</div>
+        </div>
+    </div>`;
+
+    html += `<div class="flex items-stretch gap-12 sm:gap-20">`;
+    for (let r=finalRIdx-1; r>=0; r--) {
+        html += `<div class="round-col flex flex-col justify-around relative gap-10">
+            <div class="absolute -top-16 w-full text-center z-20">
+                <span class="text-xl sm:text-2xl font-bold text-blue-600 bg-white border-[3px] border-blue-200 px-6 py-2 rounded-full shadow-sm whitespace-nowrap">${getRoundName(totalRounds,r)}</span>
+            </div>`;
+        const mc = state.bracketRounds[r].length;
+        for (let m=mc/2; m<mc; m++) html += renderMatchCard(r,m);
+        html += `</div>`;
+    }
+    html += `</div></div></div></div></div>`;
+    return html;
+}
+
+function startBracketRollingAnimation() {
+    const pool = Object.values(state.selectedQualifiers).flat();
+    const rollers = Array.from(document.querySelectorAll('.bracket-rolling-name'));
+    let active = [...rollers];
+    const iv = setInterval(() => { active.forEach(el=>{el.innerText='🎲 '+pool[Math.floor(Math.random()*pool.length)];}); }, 40);
+    rollers.forEach((el,index) => {
+        setTimeout(() => {
+            active = active.filter(r=>r!==el);
+            const fn = el.dataset.finalName;
+            el.innerHTML = fn ? '👤 '+fn : '<span class="text-slate-300 text-xl font-normal tracking-widest">等待晉級</span>';
+            el.classList.remove('bracket-rolling-name');
+            if (active.length===0) { clearInterval(iv); state.isBracketRolling=false; render(true); }
+        }, 600+(index*150));
+    });
+}
+
+function handleMatchWinnerClick(rIdx, mIdx, playerNum) {
+    const match = state.bracketRounds[rIdx][mIdx];
+    const winner = playerNum===1 ? match.p1 : match.p2;
+    if (!winner) return;
+    match.winner = (match.winner===winner) ? null : winner;
+    let crIdx=rIdx, cmIdx=mIdx;
+    while (crIdx<state.bracketRounds.length-1) {
+        const nextMIdx = Math.floor(cmIdx/2);
+        const isP1 = cmIdx%2===0;
+        const nextMatch = state.bracketRounds[crIdx+1][nextMIdx];
+        if (isP1) nextMatch.p1 = state.bracketRounds[crIdx][cmIdx].winner;
+        else nextMatch.p2 = state.bracketRounds[crIdx][cmIdx].winner;
+        if (nextMatch.winner!==nextMatch.p1 && nextMatch.winner!==nextMatch.p2) nextMatch.winner=null;
+        crIdx++; cmIdx=nextMIdx;
+    }
+    const prev = state.champion;
+    state.champion = state.bracketRounds[state.bracketRounds.length-1][0].winner;
+    if (state.champion && state.champion!==prev) triggerConfetti();
+    render(true);
+}
+
+function drawBracketLines() {
+    const svg = document.getElementById('bracket-svg');
+    const container = document.getElementById('bracket-container');
+    if (!svg||!container) return;
+    svg.setAttribute('width', container.offsetWidth);
+    svg.setAttribute('height', container.offsetHeight);
+    svg.innerHTML = '';
+    const getC = (el) => {
+        let l=0,t=0,c=el;
+        while (c&&c!==container) { l+=c.offsetLeft; t+=c.offsetTop; c=c.offsetParent; }
+        return {left:l,right:l+el.offsetWidth,top:t,bottom:t+el.offsetHeight,centerY:t+el.offsetHeight/2,centerX:l+el.offsetWidth/2};
+    };
+    const stroke = "#bae6fd", sw = "8", br = 20;
+    const finalRIdx = state.bracketRounds.length-1;
+    for (let r=0; r<finalRIdx; r++) {
+        for (let m=0; m<state.bracketRounds[r].length; m++) {
+            const c1e = document.getElementById(`match-${r}-${m}`);
+            let c2e;
+            if (r+1===finalRIdx) c2e = m===0 ? document.getElementById('final-p1-card') : document.getElementById('final-p2-card');
+            else c2e = document.getElementById(`match-${r+1}-${Math.floor(m/2)}`);
+            if (!c1e||!c2e) continue;
+            const c1=getC(c1e), c2=getC(c2e);
+            let sx,sy,ex,ey;
+            if (c1.centerX<c2.centerX) { sx=c1.right;sy=c1.centerY;ex=c2.left;ey=c2.centerY; }
+            else { sx=c1.left;sy=c1.centerY;ex=c2.right;ey=c2.centerY; }
+            const mx=sx+(ex-sx)/2, dir=sx<ex?1:-1, rx=br*dir;
+            const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+            let d=`M ${sx} ${sy} `;
+            if (Math.abs(ex-sx)<br*2) d+=`L ${ex} ${ey}`;
+            else {
+                d+=`L ${mx-rx} ${sy} `;
+                if (ey>sy+br) d+=`Q ${mx} ${sy} ${mx} ${sy+br} L ${mx} ${ey-br} Q ${mx} ${ey} ${mx+rx} ${ey} `;
+                else if (ey<sy-br) d+=`Q ${mx} ${sy} ${mx} ${sy-br} L ${mx} ${ey+br} Q ${mx} ${ey} ${mx+rx} ${ey} `;
+                else d=`M ${sx} ${sy} L ${mx} ${sy} L ${ex} ${ey}`;
+            }
+            d+=`L ${ex} ${ey}`;
+            path.setAttribute("d",d); path.setAttribute("fill","transparent");
+            path.setAttribute("stroke",stroke); path.setAttribute("stroke-width",sw);
+            path.setAttribute("stroke-linejoin","round"); path.setAttribute("stroke-linecap","round");
+            svg.appendChild(path);
+        }
+    }
+    const fm=state.bracketRounds[finalRIdx][0];
+    const cb_el=document.getElementById('champion-box');
+    const fp1=document.getElementById('final-p1-card');
+    const fp2=document.getElementById('final-p2-card');
+    if (cb_el) {
+        const cb=getC(cb_el);
+        if (fp1) {
+            const c=getC(fp1), win=state.champion===fm.p1&&state.champion;
+            const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+            p.setAttribute("d",`M ${c.centerX} ${c.bottom} L ${cb.centerX} ${cb.top}`);
+            p.setAttribute("fill","transparent"); p.setAttribute("stroke",win?"#fcd34d":"#bae6fd");
+            p.setAttribute("stroke-width",win?"12":"8"); p.setAttribute("stroke-dasharray",win?"none":"10 10");
+            p.setAttribute("stroke-linecap","round"); svg.appendChild(p);
+        }
+        if (fp2) {
+            const c=getC(fp2), win=state.champion===fm.p2&&state.champion;
+            const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+            p.setAttribute("d",`M ${c.centerX} ${c.top} L ${cb.centerX} ${cb.bottom}`);
+            p.setAttribute("fill","transparent"); p.setAttribute("stroke",win?"#fcd34d":"#bae6fd");
+            p.setAttribute("stroke-width",win?"12":"8"); p.setAttribute("stroke-dasharray",win?"none":"10 10");
+            p.setAttribute("stroke-linecap","round"); svg.appendChild(p);
+        }
+    }
+}
+
+function fitBracket() {
+    const vp=document.getElementById('bracket-viewport');
+    const wr=document.getElementById('bracket-scale-wrapper');
+    const ct=document.getElementById('bracket-container');
+    if (!vp||!wr||!ct) return;
+    const scale = Math.min((vp.clientWidth*0.95)/ct.offsetWidth, (vp.clientHeight*0.95)/ct.offsetHeight, 2.5);
+    state.bracketScale = scale;
+    wr.style.transform = `scale(${scale})`;
+}
+
+function resetApp() {
+    if (state.stage!=='setup' && window.confirm("確定要回到設定頁面嗎？所有晉級進度將會重置喔！ 🌊 (但名單會為您保留)")) {
+        state.stage='setup'; state.champion=null; state.isRolling=false; state.isBracketRolling=false;
+        render();
+    }
+}
+
+init();
+</script>
+</body>
+</html>
