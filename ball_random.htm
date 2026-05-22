@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極致震撼！夾公仔抽籤娃娃機</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle, #1a103c 0%, #07021a 100%);
+            overflow-x: hidden;
+        }
+        /* 霓虹燈效果 */
+        .neon-border {
+            box-shadow: 0 0 15px #f43f5e, inset 0 0 15px #f43f5e;
+        }
+        .neon-text {
+            text-shadow: 0 0 8px #f43f5e, 0 0 20px #e11d48;
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 8px #06b6d4, 0 0 20px #0891b2;
+        }
+        /* 搖桿球按鈕閃爍 */
+        .joystick-btn {
+            transition: all 0.1s ease;
+        }
+        .joystick-btn:active {
+            transform: scale(0.9) translateY(4px);
+        }
+        /* 遮罩動畫 */
+        @keyframes scaleUp {
+            0% { transform: scale(0.3); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .scale-up {
+            animation: scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        /* 隱藏滾動條 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-start p-3 md:p-6 select-none">
+
+    <!-- 頂部標題與裝飾 -->
+    <header class="text-center mb-4 z-10 w-full max-w-6xl">
+        <h1 class="text-4xl md:text-5xl font-black neon-text text-pink-500 tracking-wider mb-2">
+            <i class="fa-solid fa-gem mr-2 animate-bounce"></i>超級夾公仔抽籤機
+        </h1>
+        <p class="text-xs md:text-sm text-cyan-300 font-bold tracking-widest neon-text-cyan uppercase">
+            Lucky Draw Claw Machine - School Special Edition
+        </p>
+    </header>
+
+    <!-- 主要內容區：左右分欄 -->
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- 左側：設定面板與輸入區 (佔 4 欄) -->
+        <section class="lg:col-span-4 bg-slate-900/90 border border-slate-700/80 p-5 rounded-3xl shadow-2xl flex flex-col justify-between space-y-4">
+            <div>
+                <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+                    <h2 class="text-lg font-bold text-pink-400 flex items-center">
+                        <i class="fa-solid fa-list-check mr-2"></i>抽籤名單設定
+                    </h2>
+                    <span id="total-count-badge" class="bg-pink-500/20 text-pink-300 text-xs px-2.5 py-1 rounded-full border border-pink-500/30 font-bold">
+                        共 0 項
+                    </span>
+                </div>
+                
+                <p class="text-xs text-slate-400 mb-2">請輸入或編輯抽籤項目（每行一項）：</p>
+                <textarea id="items-input" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono resize-none" placeholder="輸入名單..."></textarea>
+                
+                <!-- 預設快捷產生按鈕 -->
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <button id="btn-restore-default" class="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 px-3 py-1.5 rounded-lg border border-slate-700 transition font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-graduation-cap"></i>還原預設學校名單
+                    </button>
+                    <button id="btn-clear" class="text-xs bg-red-950/40 hover:bg-red-900/60 text-red-300 px-3 py-1.5 rounded-lg border border-red-900/40 transition ml-auto">
+                        清空名單
+                    </button>
+                </div>
+            </div>
+
+            <!-- 重複抽籤設定 -->
+            <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 space-y-3">
+                <h3 class="text-sm font-bold text-pink-400 flex items-center mb-1">
+                    <i class="fa-solid fa-arrows-spin mr-2"></i>重複抽籤設定
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center justify-center space-x-1.5 p-3 rounded-xl border cursor-pointer transition" id="label-draw-keep">
+                        <input type="radio" name="draw-mode" value="keep" class="hidden">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span class="font-bold text-xs">放回再抽</span>
+                    </label>
+                    <label class="flex items-center justify-center space-x-1.5 p-3 rounded-xl border cursor-pointer transition" id="label-draw-remove">
+                        <input type="radio" name="draw-mode" value="remove" checked class="hidden">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span class="font-bold text-xs">不放回再抽</span>
+                    </label>
+                </div>
+                <p id="draw-mode-desc" class="text-[11px] text-slate-400 text-center italic">註：選擇「不放回再抽」時，被夾中的同學會從名單中被移除。</p>
+            </div>
+
+            <!-- 模式切換 -->
+            <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 space-y-3">
+                <h3 class="text-sm font-bold text-cyan-400 flex items-center mb-1">
+                    <i class="fa-solid fa-sliders mr-2"></i>控制模式選擇
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center justify-center space-x-2 p-3 rounded-xl border cursor-pointer transition" id="label-mode-auto">
+                        <input type="radio" name="control-mode" value="auto" checked class="hidden">
+                        <i class="fa-solid fa-robot text-lg"></i>
+                        <span class="font-bold text-sm">電腦自動</span>
+                    </label>
+                    <label class="flex items-center justify-center space-x-2 p-3 rounded-xl border cursor-pointer transition" id="label-mode-manual">
+                        <input type="radio" name="control-mode" value="manual" class="hidden">
+                        <i class="fa-solid fa-gamepad text-lg"></i>
+                        <span class="font-bold text-sm">手動操作</span>
+                    </label>
+                </div>
+                
+                <div id="manual-instructions" class="text-xs text-slate-400 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 hidden">
+                    <p class="font-semibold text-cyan-400 mb-1">🎮 手動操作說明：</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><strong>鍵盤操作</strong>：<kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-600 text-slate-200">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-600 text-slate-200">→</kbd> 控制移動</li>
+                        <li><strong>放下夾爪</strong>：按 <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-600 text-slate-200">↓</kbd> 或 <kbd class="px-4 py-0.5 bg-slate-800 rounded border border-slate-600 text-slate-200">空白鍵 Space</kbd></li>
+                        <li>或使用下方的大型物理搖桿面板操控！</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 重設球池按鈕 -->
+            <button id="btn-sync" class="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black py-3 px-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate mr-1"></i>重置球池 / 套用新名單
+            </button>
+        </section>
+
+        <!-- 右側：娃娃機 Canvas 與 控制面板 (佔 8 欄) -->
+        <section class="lg:col-span-8 flex flex-col items-center justify-start space-y-4">
+            
+            <!-- 娃娃機主體框 -->
+            <div class="relative w-full max-w-[580px] bg-slate-950 border-4 border-pink-600 rounded-3xl overflow-hidden shadow-2xl neon-border flex flex-col">
+                <!-- 娃娃機頂部炫光面板 -->
+                <div class="h-10 bg-gradient-to-r from-purple-900 via-pink-700 to-purple-900 border-b-2 border-pink-600 flex items-center justify-between px-6">
+                    <div class="flex space-x-1">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                        <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+                        <span class="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
+                    </div>
+                    <span class="text-xs font-black tracking-widest text-pink-100 uppercase neon-text">TOY CRANE SIMULATOR</span>
+                    <div class="text-xs font-mono text-cyan-300 font-bold" id="mode-badge">AUTO MODE</div>
+                </div>
+
+                <!-- 遊戲模擬畫布 (16:13 比例) -->
+                <div class="relative bg-slate-950 w-full overflow-hidden" style="aspect-ratio: 4/3;">
+                    <canvas id="game-canvas" class="w-full h-full block"></canvas>
+                    
+                    <!-- 掉落口裝飾遮罩 -->
+                    <div class="absolute bottom-0 left-0 w-24 h-24 pointer-events-none border-t-2 border-r-2 border-dashed border-cyan-500/30 bg-slate-950/20 backdrop-blur-xs flex items-center justify-center">
+                        <div class="text-[10px] text-cyan-400/50 font-bold text-center mt-6 mr-4">掉落口<br>PRIZE</div>
+                    </div>
+                </div>
+
+                <!-- 娃娃機底部控制台 (實體街機感) -->
+                <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-t-4 border-pink-600 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                    
+                    <!-- 搖桿與控制面板 (手動模式才完全啟用) -->
+                    <div class="flex items-center space-x-5 w-full justify-around md:justify-start">
+                        
+                        <!-- 虛擬搖桿區 -->
+                        <div class="flex items-center space-x-2">
+                            <button id="btn-left" class="joystick-btn w-12 h-12 rounded-full bg-cyan-600 hover:bg-cyan-500 border-2 border-cyan-400 flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed shadow-lg" disabled>
+                                <i class="fa-solid fa-arrow-left text-xl"></i>
+                            </button>
+                            <div class="flex flex-col items-center">
+                                <span class="text-[10px] text-cyan-400 font-bold uppercase mb-0.5">夾桿移動</span>
+                                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center relative">
+                                    <div class="w-3 h-3 rounded-full bg-pink-500 absolute animate-pulse"></div>
+                                </div>
+                            </div>
+                            <button id="btn-right" class="joystick-btn w-12 h-12 rounded-full bg-cyan-600 hover:bg-cyan-500 border-2 border-cyan-400 flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed shadow-lg" disabled>
+                                <i class="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
+                        </div>
+
+                        <!-- 大型紅色「抓取」按鈕 -->
+                        <div class="flex flex-col items-center">
+                            <button id="btn-drop" class="joystick-btn w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 border-4 border-yellow-400 flex flex-col items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed shadow-xl" disabled>
+                                <span class="text-xs font-black">DROP</span>
+                                <i class="fa-solid fa-hand-fist mt-0.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 啟動區 (電腦模式或大動作按鈕) -->
+                    <div class="w-full md:w-auto flex justify-end">
+                        <button id="btn-start-draw" class="w-full md:w-48 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black text-lg py-3.5 px-6 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i>開始抽籤
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 當前狀態提示 -->
+            <div class="w-full max-w-[580px] bg-slate-900/50 border border-slate-800 p-3 rounded-xl flex items-center justify-between text-xs text-slate-400">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
+                    <span id="status-text">準備就緒，請點擊「開始抽籤」或切換手動模式！</span>
+                </span>
+                <span id="fps-counter" class="font-mono text-slate-500">FPS: 60</span>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- 全螢幕大特寫彈窗 (中獎震撼效果) -->
+    <div id="result-overlay" class="fixed inset-0 bg-slate-950/97 z-50 flex flex-col items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-500 backdrop-blur-md">
+        
+        <!-- 背景炫彩光芒 -->
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(244,63,94,0.15)_0%,rgba(0,0,0,0)_70%)] animate-pulse pointer-events-none"></div>
+        
+        <!-- 煙火/粒子 Canvas -->
+        <canvas id="confetti-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+        <div class="w-full max-w-4xl text-center z-10 space-y-8 px-4 flex flex-col items-center">
+            
+            <!-- 閃亮皇冠/獎盃裝飾 -->
+            <div class="scale-up delay-75">
+                <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 text-slate-950 shadow-2xl relative">
+                    <i class="fa-solid fa-crown text-5xl animate-bounce"></i>
+                    <div class="absolute -inset-2 rounded-full bg-yellow-400/20 animate-ping -z-10"></div>
+                </div>
+            </div>
+
+            <!-- 抽中標題 -->
+            <div class="space-y-2 scale-up delay-150">
+                <p class="text-cyan-400 font-black tracking-[0.3em] uppercase text-lg md:text-xl neon-text-cyan">CONGRATULATIONS</p>
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-300">🎉 恭喜幸運得主 🎉</h2>
+            </div>
+
+            <!-- 超級無敵特寫容器 (讓名字放大到最大) -->
+            <div class="scale-up delay-300 w-full bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-pink-500/10 border-y-4 border-pink-500 py-10 md:py-14 my-4 flex items-center justify-center min-h-[180px] md:min-h-[260px] relative shadow-[0_0_50px_rgba(244,63,94,0.2)]">
+                
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
+                <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
+
+                <!-- 這裡的名字使用最大的字體與最引人注目的霓虹燈渲染 -->
+                <!-- 動態極限特寫文字 -->
+                <span id="winner-name-text" class="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 tracking-wide leading-tight neon-text px-4 break-all block text-center max-w-full drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)]">
+                    得獎者姓名
+                </span>
+
+            </div>
+
+            <!-- 獎品球資訊 -->
+            <p id="winner-info" class="text-sm md:text-base text-slate-400 font-bold scale-up delay-500">
+                (從 0 顆波波中幸運夾起)
+            </p>
+
+            <!-- 確定/繼續按鈕 -->
+            <div class="scale-up delay-500 pt-4">
+                <button id="btn-close-result" class="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-lg px-12 py-4 rounded-2xl shadow-2xl transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> 再抽一次
+                </button>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- 腳部宣告 -->
+    <footer class="mt-8 text-center text-xs text-slate-600 space-y-1">
+        <p>超級夾公仔抽籤機 © 2026. All Rights Reserved.</p>
+        <p>專業網頁互動程式設計師呈現 - 採用 HTML5 Canvas & 2D 物理極速核心</p>
+    </footer>
+
+    <!-- 主要邏輯 JavaScript 程式碼 -->
+    <script>
+        // --- 預設學校完整名單 ---
+        const defaultSchoolNames = [
+            "1A陳熹雋", "1A劉仲宇", "1A呂仲軒", "1A吳諾兒", "1A施鈞源", "1A陳意衡", "1A曾以仁", "1A陳彥君", "1A陳彥羲", "1A許皓琳", "1A黃煜軒",
+            "1B陳曉瑩", "1B李俊霆", "1B李鎧", "1B梁凱淇", "1B巫恒逸", "1B陳梓韜", "1B蘇智泓", "1B曾鋭彬", "1B尹梓言", "1B胡梓榣", "1B陳悅心", "1B蔡宏鑫", "1B朱灝喆", "1B何允恒", "1B韓欣穎",
+            "1C歐陽子朗", "1C江泳婷", "1C郭曉靜", "1C林芊玥", "1C劉子儀", "1C李柏翱", "1C潘承鈞", "1C蕭雨彤", "1C譚丞竣", "1C黃子軒", "1C王梓然", "1C鄭浚東", "1C張允謙", "1C洪永灃", "1C江澤楷",
+            "1D郭又嘉", "1D盧曉怡", "1D顏孝善", "1D陳晞", "1D謝泓泰", "1D黃煦昡", "1D楊善雯", "1D陳柏熹", "1D張睎童", "1D周羲和", "1D方梓喬",
+            "1E郭柏喬", "1E林嘉慧", "1E梁天豪", "1E連尉𧧽", "1E莫彥博", "1E蔡竣軒", "1E黃晉謙", "1E胡凱藍", "1E顏嘉希", "1E楊樂軒", "1E陳君業", "1E陳星宇", "1E鄭子榆", "1E何鉦霆", "1E許正翹",
+            "2A陳信希", "2A林陽曦", "2A李卓斐", "2A廖凱漩", "2A馬鉦博", "2A蕭玥呈", "2A陳宥銘", "2A曾恩陶", "2A黃玳嘉", "2A黃彥熹", "2A馮朗華", "2A何旻蔚", "2A何梓嫣",
+            "2B何芷奷", "2B林允兒", "2B劉星宇", "2B梁雅兒", "2B盧靖方", "2B吳家賢", "2B曾夢歡", "2B謝樂懿", "2B嚴敏瑜", "2B余芊潼", "2B陳穎澄", "2B張峻僑", "2B何籽齊",
+            "2C陳家博", "2C鍾禮賢", "2C李諾頤", "2C梁琋雯", "2C劉梓潼", "2C王羨妤", "2C黃庭謙", "2C鍾浩鈱", "2C陳楚伊", "2C張日曦", "2C朱晉賢",
+            "2D李靖頤", "2D林烱烽", "2D呂綽瑤", "2D曾禮賢", "2D王儒悦", "2D胡錦天", "2D王暟瞳", "2D胡梓筠", "2D陳凱淳", "2D馮凱琳", "2D林雅雯", "2D劉玥澄",
+            "2E歐希彤", "2E葉文晞", "2E黎爾澄", "2E黎爾謙", "2E李依娜", "2E連珝㞩", "2E巫倬鋒", "2E戴晞然", "2E譚竣軒", "2E陳梓昊", "2E黃千睿", "2E黃梓謙", "2E朱晨曦", "2E陳芷琳", "2E張司宇", "2E張煒傑", "2E張恩僑", "2E趙浩軒", "2E嚴崇灝",
+            "3A陳家淳", "3A梁可榆", "3A林雅婷", "3A吳葉恆", "3A蘇逸朗", "3A唐婉宜", "3A曾卓謙", "3A張薾晨", "3A張景軒", "3A何沛靈", "3A何韻瀅", "3A林善瑩",
+            "3B劉柏希", "3B梁語軒", "3B黃覓颻", "3B黃小洹", "3B陳灝斌", "3B王梓穎", "3B胡凱澄", "3B周望舒", "3B鄧渲穎", "3B黎熙桐",
+            "3C陳逸朗", "3C李祉誼", "3C連信言", "3C蕭梓淇", "3C施靜嵐", "3C張允嵐", "3C楊樂昕", "3C葉愷晴", "3C葉蘊瑤", "3C庾凱舒", "3C莊鎧溢", "3C郭睿捷",
+            "3D梁澤栩", "3D連家晴", "3D林晴嵐", "3D龍允澄", "3D潘景康", "3D施澤仁", "3D杜國維", "3D黃子俊", "3D楊靖泓", "3D楊心蕊", "3D何韻妍", "3D黎允皓", "3D林心賢", "3D李紫盈",
+            "3E梁卓謙", "3E李俊賢", "3E李凱澄", "3E潘承耀", "3E譚沛林", "3E胡旻慧", "3E鄭雅予", "3E周穎熙", "3E鄭芷瀅", "3E張閔程", "3E霍柏彥",
+            "4A洪鎮堯", "4A林泳桐", "4A梁家浠", "4A陸思慧", "4A麥梓琳", "4A陳信佑", "4A吳子睿", "4A潘奕匡", "4A潘奕霖", "4A黃浚銘", "4A吳婧言", "4A吳婧煊", "4A吳思博", "4A陳靖欣", "4A袁浚熙", "4A鄭多宏", "4A張綽祐", "4A康柏熙", "4A許珮筠",
+            "4B陳奕廷", "4B劉映汝", "4B梁景熹", "4B梁漪桓", "4B李樂懿", "4B梁恩浠", "4B呂清妍", "4B鄭朗軒", "4B馬昊燊", "4B唐嘉禧", "4B王梓琪", "4B王熙雯", "4B張渼偲", "4B賀致堯", "4B何旻蒑", "4B林奕仲",
+            "4C郭俞彤", "4C李昕熹", "4C梁晞妍", "4C吳沛珊", "4C曾宇哲", "4C楊祐安", "4C蔡清妍", "4C關宗灝", "4C奚梓麟", "4C鄧諾文",
+            "4D梁芷悠", "4D蘇俊皓", "4D譚楚桐", "4D湯詠賢", "4D曹子玥", "4D陳彥彤", "4D朱俊朗",
+            "4E黃子誠", "4E吳思橋", "4E陳彥希", "4E鄭子諾", "4E何敏嘉",
+            "5A陳頌錡", "5A李星慧", "5A羅泳雅", "5A盧妍孜", "5A呂洛恒", "5A陳淏揚", "5A馬曉晴", "5A馬梓崴", "5A邱芊羽", "5A譚知行", "5A鄧司鉉", "5A陳滶銘", "5A楊玥瑩", "5A翁浚皓", "5A張銘曉", "5A陳思羽", "5A趙恩彤", "5A曹子錀",
+            "5B陳子悠", "5B李卓珈", "5B李俊逸", "5B李加敏", "5B李允捷", "5B劉可兒", "5B吳朗瑜", "5B伍慧珊", "5B周雋希", "5B孫銘浠", "5B譚棨燊", "5B曾慶洛", "5B黃卓妤", "5B黃梓欣", "5B黃詠心", "5B袁崇曦", "5B鄭儲邦", "5B莊浠瑩", "5B夏子弘", "5B賀子宸", "5B林嘉敏",
+            "5C劉佩祺", "5C胡啓湸", "5C胡倩瑋", "5C楊舜之", "5C陳昱霖", "5C鄒卓喬", "5C黎凱甄",
+            "5D鍾禮謙", "5D李凱宇", "5D陳立喬", "5D陳敏軒", "5D陳茂凱", "5D鄭奕飛", "5D周青陽",
+            "5E梁心盈", "5E陳芝敏", "5E張怡禎", "5E張怡萱", "5E黃健彬",
+            "6A龔均曈", "6A賴家敏", "6A黎子芊", "6A黎子萱", "6A劉天溵", "6A陳思成", "6A李樂怡", "6A廖望哲", "6A潘茵彤", "6A蕭仲言", "6A施瀛鈞", "6A張綽軒", "6A黃卓文", "6A程頌兒", "6A周芷萱", "6A周子祐", "6A馮智譽",
+            "6B區永揚", "6B郭千琬", "6B郭倚彤", "6B劉康佑", "6B李瀚泓", "6B黃贊臣", "6B黃偉睿", "6B張浚一", "6B吳璟悠", "6B張駿朗", "6B張凱喬",
+            "6C李芊慧", "6C黃駿佑", "6C袁凱霖", "6C鄭凱沂",
+            "6D梁文晞", "6D李悅曦", "6D董穎天", "6D張浩揚", "6D張晨曦", "6D江俊曦",
+            "6E楊希昕", "6E林梓慧"
+        ];
+
+        // --- DOM 元素獲取 ---
+        const itemsInput = document.getElementById('items-input');
+        const totalCountBadge = document.getElementById('total-count-badge');
+        const btnRestoreDefault = document.getElementById('btn-restore-default');
+        const btnClear = document.getElementById('btn-clear');
+        const btnSync = document.getElementById('btn-sync');
+        
+        const labelModeAuto = document.getElementById('label-mode-auto');
+        const labelModeManual = document.getElementById('label-mode-manual');
+        const manualInstructions = document.getElementById('manual-instructions');
+        const modeBadge = document.getElementById('mode-badge');
+
+        const labelDrawKeep = document.getElementById('label-draw-keep');
+        const labelDrawRemove = document.getElementById('label-draw-remove');
+        const drawModeDesc = document.getElementById('draw-mode-desc');
+        
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const btnDrop = document.getElementById('btn-drop');
+        const btnStartDraw = document.getElementById('btn-start-draw');
+        const statusText = document.getElementById('status-text');
+        const fpsCounter = document.getElementById('fps-counter');
+        
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const resultOverlay = document.getElementById('result-overlay');
+        const winnerNameText = document.getElementById('winner-name-text');
+        const winnerInfo = document.getElementById('winner-info');
+        const btnCloseResult = document.getElementById('btn-close-result');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const confettiCtx = confettiCanvas.getContext('2d');
+
+        // --- 全域變數與物理狀態 ---
+        let rawItems = []; // 完整的使用者輸入清單 (可達 300+ 以上)
+        let mode = 'auto'; // 'auto' | 'manual'
+        let drawRepeatMode = 'keep'; // 'keep' (放回) | 'remove' (不放回)
+        let gamePhase = 'ready'; // 'ready' | 'moving' | 'lowering' | 'grabbing' | 'rising' | 'returning' | 'dropping' | 'celebrating'
+        
+        // 畫布渲染大小設定 (高寬固定比例 4:3)
+        const VIEW_WIDTH = 800;
+        const VIEW_HEIGHT = 600;
+        canvas.width = VIEW_WIDTH;
+        canvas.height = VIEW_HEIGHT;
+
+        // 物理引擎主狀態
+        let balls = [];
+        const MAX_PHYSICS_BALLS = 50; // 修改為最多 50 顆波波，保持畫面舒適及完美物理表現
+        
+        // 夾桿與夾爪參數
+        const claw = {
+            x: VIEW_WIDTH / 2,
+            y: 50,
+            targetX: VIEW_WIDTH / 2,
+            cableLength: 40,
+            maxCableLength: 400,
+            speedX: 4,
+            speedY: 5,
+            width: 70,
+            height: 50,
+            angle: 0.2, // 爪臂張開度弧度
+            state: 'open', // 'open' | 'closed'
+            grippedBall: null, // 被夾中的球
+            dropZoneX: 60, // 掉落孔上方 X 座標
+        };
+
+        // 掉落口漏斗障礙物定義 (物理碰撞)
+        const dropChute = {
+            x: 100, // 擋板右側邊界
+            y: VIEW_HEIGHT - 130, // 擋板頂部高度
+        };
+
+        // 按鍵監聽狀態
+        const keys = {
+            ArrowLeft: false,
+            ArrowRight: false,
+            ArrowDown: false,
+            Space: false
+        };
+
+        // --- 物理引擎實作：自製超流暢 AABB 圓球與邊界碰撞 ---
+        class Ball {
+            constructor(x, y, radius, label, color, fontSize) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.label = label; // 對應的抽籤名字
+                this.color = color;
+                this.fontSize = fontSize || 11;
+                this.inChute = false; // 出口通道鎖：100% 擋下未被夾中而意外滑入出口通道的波波
+                
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.mass = radius * radius;
+                this.restitution = 0.55; // 彈性係數
+                this.friction = 0.985; // 磨擦阻力
+            }
+
+            update() {
+                // 重力
+                this.vy += 0.25;
+                
+                // 套用力學
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 檢查是否被夾子帶入出口區上空，若符合則啟用通道解鎖
+                if (this === claw.grippedBall && this.x < dropChute.x) {
+                    this.inChute = true;
+                }
+
+                // 1. 與外牆與擋板碰撞 (依據狀態鎖嚴格分流)
+                if (!this.inChute) {
+                    // 右側球池邊界：左邊限制是擋板右側，右邊限制是外牆
+                    if (this.x < dropChute.x + this.radius) {
+                        this.x = dropChute.x + this.radius;
+                        this.vx = Math.abs(this.vx) * this.restitution; // 強制往右彈
+                    }
+                    if (this.x > VIEW_WIDTH - this.radius) {
+                        this.x = VIEW_WIDTH - this.radius;
+                        this.vx = -Math.abs(this.vx) * this.restitution; // 往左彈
+                    }
+
+                    // 一般球池底部邊界
+                    if (this.y > VIEW_HEIGHT - this.radius - 20) { // 底部留有擋泥板高 20
+                        this.y = VIEW_HEIGHT - this.radius - 20;
+                        this.vy = -Math.abs(this.vy) * this.restitution;
+                        this.vx *= 0.95; // 底部微摩擦力
+                    }
+                } else {
+                    // 已解鎖進入出口通道內的球 (即被夾子送過來的目標球)
+                    // 左側牆壁碰撞
+                    if (this.x < this.radius) {
+                        this.x = this.radius;
+                        this.vx = Math.abs(this.vx) * this.restitution;
+                    }
+                    // 右側擋板左側壁碰撞
+                    if (this.x > dropChute.x - this.radius) {
+                        this.x = dropChute.x - this.radius;
+                        this.vx = -Math.abs(this.vx) * this.restitution;
+                    }
+
+                    // 掉落口底座：掉出畫面底端就會觸發中獎
+                    if (this.y > VIEW_HEIGHT + this.radius + 10) {
+                        // 觸發中獎！
+                        triggerWin(this.label);
+                        // 移除此球
+                        balls = balls.filter(b => b !== this);
+                    }
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                
+                // 漸層球體效果
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius * 0.3,
+                    this.y - this.radius * 0.3,
+                    this.radius * 0.1,
+                    this.x, this.y, this.radius
+                );
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.3, this.color);
+                gradient.addColorStop(1, darkenColor(this.color, 40));
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // 畫高光白點
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius * 0.4, this.y - this.radius * 0.4, this.radius * 0.2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fill();
+
+                // 球面印上名字的前三個字
+                ctx.fillStyle = '#0f172a';
+                ctx.font = `bold ${this.fontSize}px "Noto Sans TC"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const displayName = this.label.length > 3 ? this.label.substring(0, 3) : this.label;
+                
+                // 加一個白色文字底框方便閱讀
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.fillRect(this.x - this.radius * 0.8, this.y - (this.fontSize * 0.6), this.radius * 1.6, this.fontSize * 1.2);
+                ctx.fillStyle = '#000000';
+                ctx.fillText(displayName, this.x, this.y);
+
+                ctx.restore();
+            }
+        }
+
+        // 顏色變暗輔助函式
+        function darkenColor(hex, percent) {
+            let num = parseInt(hex.replace("#",""), 16),
+            amt = Math.round(2.55 * percent),
+            R = (num >> 16) - amt,
+            G = (num >> 8 & 0x00FF) - amt,
+            B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R<0?0:R>255?255:R)*0x10000 + (G<0?0:G>255?255:G)*0x100 + (B<0?0:B>255?255:B)).toString(16).slice(1);
+        }
+
+        // --- 隨機鮮艷粉嫩顏色 ---
+        function getRandomColor() {
+            const colors = [
+                '#f43f5e', '#ec4899', '#d946ef', '#a855f7', 
+                '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', 
+                '#06b6d4', '#14b8a6', '#10b981', '#22c55e', 
+                '#84cc16', '#eab308', '#f97316'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // --- 建立/重設球池物理粒子 ---
+        function initBallPool() {
+            balls = [];
+            if (rawItems.length === 0) return;
+
+            // 隨機打亂完整名單
+            const shuffled = [...rawItems].sort(() => Math.random() - 0.5);
+            // 每次最多挑選 50 位同學放入波波池內
+            const poolCount = Math.min(shuffled.length, MAX_PHYSICS_BALLS);
+            const selectedSubset = shuffled.slice(0, poolCount);
+
+            // 當限制在 50 顆以內，我們可以使用最適宜且大小適中的球體與字型
+            let ballRadius = 23;
+            let fontSize = 11;
+            let cols = 8; // 生成寬度，讓降落更自然
+
+            // 產生物理球：讓它們從上方高處整齊落下，帶來超解壓的波波雨
+            const startX = dropChute.x + 45; 
+            const endX = VIEW_WIDTH - 45; 
+            const startY = 80; 
+
+            for (let i = 0; i < selectedSubset.length; i++) {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                const rx = startX + col * ((endX - startX) / (cols - 1)) + (Math.random() - 0.5) * 8;
+                const ry = startY + row * (ballRadius * 1.5) + (Math.random() - 0.5) * 5;
+                
+                balls.push(new Ball(
+                    rx, 
+                    ry, 
+                    ballRadius, 
+                    selectedSubset[i], 
+                    getRandomColor(),
+                    fontSize
+                ));
+            }
+
+            updateLabelsAndUI();
+            // 一律將遊戲階段強制重設為 'ready'，確保 Canvas 物理運算立刻重啟
+            setGamePhase('ready');
+            updateStatus(`已從名單中挑選出 ${selectedSubset.length} 位放入池內！全部名單共 ${rawItems.length} 人。`);
+        }
+
+        // 當輸入改變時更新狀態
+        function syncItemsFromTextarea() {
+            const lines = itemsInput.value.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+            rawItems = lines;
+            updateLabelsAndUI();
+        }
+
+        function updateLabelsAndUI() {
+            totalCountBadge.textContent = `共 ${rawItems.length} 項`;
+            
+            // 按鈕啟用狀態
+            if (rawItems.length === 0) {
+                btnStartDraw.disabled = true;
+                btnStartDraw.classList.add('opacity-50', 'cursor-not-allowed');
+                btnSync.disabled = true;
+            } else {
+                btnStartDraw.disabled = false;
+                btnStartDraw.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnSync.disabled = false;
+            }
+        }
+
+        // --- 遊戲階段狀態機控制 ---
+        function setGamePhase(newPhase) {
+            gamePhase = newPhase;
+            
+            // 電腦與手動 UI 介面微調
+            if (mode === 'manual' && gamePhase === 'ready') {
+                btnLeft.disabled = false;
+                btnRight.disabled = false;
+                btnDrop.disabled = false;
+                btnStartDraw.disabled = true; 
+            } else {
+                // 自動模式或運行中，禁用手動操控按鈕
+                btnLeft.disabled = true;
+                btnRight.disabled = true;
+                btnDrop.disabled = true;
+                if (mode === 'auto' && gamePhase === 'ready' && rawItems.length > 0) {
+                    btnStartDraw.disabled = false;
+                } else {
+                    btnStartDraw.disabled = true;
+                }
+            }
+        }
+
+        function updateStatus(text) {
+            statusText.textContent = text;
+        }
+
+        // --- 重複抽籤設定切換 ---
+        function setDrawRepeatMode(newDrawMode) {
+            drawRepeatMode = newDrawMode;
+            if (drawRepeatMode === 'keep') {
+                labelDrawKeep.classList.add('border-pink-500', 'bg-pink-500/20', 'text-pink-400');
+                labelDrawKeep.classList.remove('border-slate-800', 'text-slate-400');
+                labelDrawRemove.classList.add('border-slate-800', 'text-slate-400');
+                labelDrawRemove.classList.remove('border-pink-500', 'bg-pink-500/20', 'text-pink-400');
+                drawModeDesc.textContent = "註：選擇「放回再抽」時，被夾中的同學會繼續保留在球池名單中。";
+            } else {
+                labelDrawRemove.classList.add('border-pink-500', 'bg-pink-500/20', 'text-pink-400');
+                labelDrawRemove.classList.remove('border-slate-800', 'text-slate-400');
+                labelDrawKeep.classList.add('border-slate-800', 'text-slate-400');
+                labelDrawKeep.classList.remove('border-pink-500', 'bg-pink-500/20', 'text-pink-400');
+                drawModeDesc.textContent = "註：選擇「不放回再抽」時，被夾中的同學會從名單中被移除。";
+            }
+        }
+
+        // --- 模式切換設定 ---
+        function setControlMode(newMode) {
+            mode = newMode;
+            if (mode === 'auto') {
+                labelModeAuto.classList.add('border-cyan-500', 'bg-cyan-500/20', 'text-cyan-400');
+                labelModeAuto.classList.remove('border-slate-800', 'text-slate-400');
+                labelModeManual.classList.add('border-slate-800', 'text-slate-400');
+                labelModeManual.classList.remove('border-cyan-500', 'bg-cyan-500/20', 'text-cyan-400');
+                manualInstructions.classList.add('hidden');
+                modeBadge.textContent = "AUTO MODE";
+                modeBadge.className = "text-xs font-mono text-cyan-400 font-bold";
+                setGamePhase('ready');
+                updateStatus("已切換為自動模式，請點擊「開始抽籤」！");
+            } else {
+                labelModeManual.classList.add('border-cyan-500', 'bg-cyan-500/20', 'text-cyan-400');
+                labelModeManual.classList.remove('border-slate-800', 'text-slate-400');
+                labelModeAuto.classList.add('border-slate-800', 'text-slate-400');
+                labelModeAuto.classList.remove('border-cyan-500', 'bg-cyan-500/20', 'text-cyan-400');
+                manualInstructions.classList.remove('hidden');
+                modeBadge.textContent = "MANUAL MODE";
+                modeBadge.className = "text-xs font-mono text-cyan-400 font-bold";
+                setGamePhase('ready');
+                updateStatus("手動模式：使用鍵盤（←/→/↓/空白）或左側搖桿操作夾爪！");
+            }
+        }
+
+        // --- 物理引擎核心：處理兩球之間的彈性碰撞 ---
+        function resolveBallCollisions() {
+            const len = balls.length;
+            for (let i = 0; i < len; i++) {
+                const b1 = balls[i];
+                if (b1 === claw.grippedBall) continue;
+
+                for (let j = i + 1; j < len; j++) {
+                    const b2 = balls[j];
+                    if (b2 === claw.grippedBall) continue;
+
+                    const dx = b2.x - b1.x;
+                    const dy = b2.y - b1.y;
+                    const minDistance = b1.radius + b2.radius;
+
+                    // 效能優化：利用快速 X/Y 軸剪裁，避免不必要的開根號高開銷運算
+                    if (Math.abs(dx) >= minDistance || Math.abs(dy) >= minDistance) continue;
+
+                    const distSqr = dx * dx + dy * dy;
+                    const minDistSqr = minDistance * minDistance;
+
+                    if (distSqr < minDistSqr) {
+                        let distance = Math.sqrt(distSqr);
+                        
+                        // 防卡死安全網：若兩球完全重疊 (距離為 0)，隨機給予微小偏移以防止除以零產生 NaN
+                        if (distance === 0) {
+                            b1.x -= 1;
+                            b2.x += 1;
+                            distance = 2;
+                        }
+
+                        const overlap = minDistance - distance;
+                        const nx = dx / distance;
+                        const ny = dy / distance;
+
+                        // 1. 重疊修正 (將重疊的波波雙向推開)
+                        b1.x -= nx * overlap * 0.5;
+                        b1.y -= ny * overlap * 0.5;
+                        b2.x += nx * overlap * 0.5;
+                        b2.y += ny * overlap * 0.5;
+
+                        // 2. 計算碰撞衝量 (Impulse)
+                        const kx = b1.vx - b2.vx;
+                        const ky = b1.vy - b2.vy;
+                        const vn = kx * nx + ky * ny;
+
+                        // 只有兩球朝向彼此運動時才進行動量交換
+                        if (vn > 0) {
+                            const restitution = 0.55; // 彈性係數
+                            const impulse = (1 + restitution) * vn / (1 / b1.mass + 1 / b2.mass);
+                            
+                            const impulseX = impulse * nx;
+                            const impulseY = impulse * ny;
+
+                            b1.vx -= impulseX / b1.mass;
+                            b1.vy -= impulseY / b1.mass;
+                            b2.vx += impulseX / b2.mass;
+                            b2.vy += impulseY / b2.mass;
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- 夾爪邏輯與物理更新 ---
+        function updateClawLogic() {
+            // 如果夾爪此時有抓住球，球的座標緊貼在爪子底端
+            if (claw.grippedBall) {
+                claw.grippedBall.x = claw.x;
+                claw.grippedBall.y = claw.y + claw.cableLength + 15;
+                claw.grippedBall.vx = 0;
+                claw.grippedBall.vy = 0;
+            }
+
+            switch(gamePhase) {
+                case 'moving':
+                    // 自動模式：移動到目標球上方
+                    if (mode === 'auto') {
+                        const diffX = claw.targetX - claw.x;
+                        if (Math.abs(diffX) > claw.speedX) {
+                            claw.x += Math.sign(diffX) * claw.speedX;
+                            // 動態微晃動爪臂，增強真實感
+                            claw.angle = 0.2 + Math.sin(Date.now() / 100) * 0.05;
+                        } else {
+                            claw.x = claw.targetX;
+                            setGamePhase('lowering');
+                            updateStatus("正在放下夾桿...");
+                        }
+                    }
+                    break;
+
+                case 'lowering':
+                    // 線纜伸長下墜
+                    if (claw.cableLength < claw.maxCableLength) {
+                        claw.cableLength += claw.speedY;
+                        claw.angle = 0.35; // 下落時微微張開爪子
+                        
+                        // 碰撞球判定：如果夾爪中心點與任一球碰撞，強制提前收回並啟動抓取
+                        if (!claw.grippedBall) {
+                            const clawTipX = claw.x;
+                            const clawTipY = claw.y + claw.cableLength;
+                            
+                            for (let b of balls) {
+                                // 計算夾爪末端和球的距離
+                                const dist = Math.hypot(b.x - clawTipX, b.y - (clawTipY + 10));
+                                if (dist < b.radius + 15) {
+                                    // 碰到了！開始抓取
+                                    setGamePhase('grabbing');
+                                    updateStatus("抓到東西了！準備收回...");
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // 到底了，開始抓取
+                        setGamePhase('grabbing');
+                        updateStatus("夾爪閉合中...");
+                    }
+                    break;
+
+                case 'grabbing':
+                    // 爪子合攏過程 (動畫縮小 angle)
+                    if (claw.angle > 0.05) {
+                        claw.angle -= 0.02; // 爪子合攏
+                    } else {
+                        // 保證抓取邏輯：自動尋找離爪子最近的波波，並將其吸附至爪中
+                        const clawTipX = claw.x;
+                        const clawTipY = claw.y + claw.cableLength;
+                        let grabbed = null;
+                        let minD = 99999;
+
+                        for (let b of balls) {
+                            const dist = Math.hypot(b.x - clawTipX, b.y - (clawTipY + 15));
+                            if (dist < minD) {
+                                minD = dist;
+                                grabbed = b;
+                            }
+                        }
+
+                        // 若球池內還有球，進行強力吸附抓取，防漏空
+                        if (grabbed) {
+                            claw.grippedBall = grabbed;
+                            // 強制將球的位置完美吸附對齊至夾爪底部中心，避免因為碰撞而掉落
+                            grabbed.x = claw.x;
+                            grabbed.y = claw.y + claw.cableLength + 15;
+                            grabbed.vx = 0;
+                            grabbed.vy = 0;
+
+                            // 【核心修正】：直接使用該顆實體波波身上原本印有的名字！不再用隨機陣列改寫它！
+                            const luckyName = grabbed.label;
+                            updateStatus(`成功夾到波波！【${luckyName}】正在上升...`);
+                        } else {
+                            updateStatus("球池中已無任何波波！");
+                        }
+                        
+                        setGamePhase('rising');
+                    }
+                    break;
+
+                case 'rising':
+                    // 線纜縮回
+                    if (claw.cableLength > 40) {
+                        claw.cableLength -= claw.speedY;
+                        // 爪子緊閉
+                        claw.angle = 0.05;
+                    } else {
+                        claw.cableLength = 40;
+                        setGamePhase('returning');
+                        updateStatus("正在移動到出口...");
+                    }
+                    break;
+
+                case 'returning':
+                    // 夾桿往左側掉落孔移動 (dropZoneX)
+                    const diffToDrop = claw.dropZoneX - claw.x;
+                    if (Math.abs(diffToDrop) > claw.speedX) {
+                        claw.x += Math.sign(diffToDrop) * claw.speedX;
+                        // 爪子緊閉，球跟著晃動
+                        claw.angle = 0.04;
+                    } else {
+                        claw.x = claw.dropZoneX;
+                        setGamePhase('dropping');
+                        updateStatus("抵達掉落口！放開夾爪！");
+                    }
+                    break;
+
+                case 'dropping':
+                    // 張開爪子，放下波波
+                    if (claw.angle < 0.3) {
+                        claw.angle += 0.03;
+                    } else {
+                        // 放手
+                        if (claw.grippedBall) {
+                            // 給波波一點向下的初始微推力，讓它朝出口掉落
+                            claw.grippedBall.vy = 2;
+                            claw.grippedBall = null;
+                        }
+                        // 隨後回到 ready 狀態
+                        setTimeout(() => {
+                            if (gamePhase !== 'celebrating') {
+                                setGamePhase('ready');
+                                updateStatus("準備就緒！請繼續抽籤。");
+                            }
+                        }, 1200);
+                    }
+                    break;
+                
+                case 'ready':
+                default:
+                    // 手動模式時的鍵盤 / 按鈕直接控制
+                    if (mode === 'manual') {
+                        if (keys.ArrowLeft) {
+                            claw.x = Math.max(60, claw.x - claw.speedX);
+                            claw.angle = 0.2 + Math.sin(Date.now() / 80) * 0.03; // 移動時微晃
+                        } else if (keys.ArrowRight) {
+                            claw.x = Math.min(VIEW_WIDTH - 50, claw.x + claw.speedX);
+                            claw.angle = 0.2 - Math.sin(Date.now() / 80) * 0.03;
+                        } else {
+                            claw.angle = 0.2;
+                        }
+
+                        // 按下↓或空白鍵觸發下放
+                        if (keys.ArrowDown || keys.Space) {
+                            setGamePhase('lowering');
+                            updateStatus("手動下放夾爪中！");
+                            // 釋放按鍵狀態避免連續重複觸發
+                            keys.ArrowDown = false;
+                            keys.Space = false;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        // --- 繪製娃娃機背景、結構、軌道與夾爪 ---
+        function drawMachineBackground() {
+            // 清除畫布
+            ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+            // 1. 娃娃機背景漸層
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, VIEW_HEIGHT);
+            bgGrad.addColorStop(0, '#0a0d24');
+            bgGrad.addColorStop(1, '#1e1435');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+            // 2. 畫出背景裝飾網格與霓虹燈條
+            ctx.strokeStyle = '#2d1b54';
+            ctx.lineWidth = 1;
+            // 垂直網格
+            for (let x = 0; x < VIEW_WIDTH; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, VIEW_HEIGHT);
+                ctx.stroke();
+            }
+            // 水平網格
+            for (let y = 0; y < VIEW_HEIGHT; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(VIEW_WIDTH, y);
+                ctx.stroke();
+            }
+
+            // 3. 畫出口通道
+            ctx.fillStyle = '#080916';
+            ctx.fillRect(0, dropChute.y, dropChute.x, VIEW_HEIGHT - dropChute.y);
+            // 出口右側擋板
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(dropChute.x, VIEW_HEIGHT);
+            ctx.lineTo(dropChute.x, dropChute.y);
+            ctx.lineTo(dropChute.x - 20, dropChute.y - 15);
+            ctx.stroke();
+
+            // 4. 畫頂部不銹鋼橫向滑軌
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(30, 25, VIEW_WIDTH - 60, 10);
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(30, 27, VIEW_WIDTH - 60, 3);
+        }
+
+        function drawClaw() {
+            ctx.save();
+
+            // 1. 畫天車滑塊
+            ctx.fillStyle = '#475569';
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(claw.x - 25, 18, 50, 18, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // 2. 畫滑塊高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillRect(claw.x - 20, 21, 12, 3);
+
+            // 3. 畫拉力不銹鋼鋼線 (Cable)
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(claw.x, 36);
+            ctx.lineTo(claw.x, claw.y + claw.cableLength);
+            ctx.stroke();
+
+            // 鋼線上的螺紋圈
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1;
+            for (let h = 45; h < claw.y + claw.cableLength; h += 18) {
+                ctx.beginPath();
+                ctx.ellipse(claw.x, h, 4, 1.5, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // 4. 畫夾爪主體頭部
+            const headY = claw.y + claw.cableLength;
+            ctx.fillStyle = '#e2e8f0';
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(claw.x, headY, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 頭部紅黃點綴燈
+            ctx.fillStyle = (Date.now() % 500 < 250) ? '#ef4444' : '#eab308';
+            ctx.beginPath();
+            ctx.arc(claw.x, headY - 3, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. 畫機械爪臂 (三叉結構，鏡像對稱繪製)
+            const armLen = 38;
+            const jointY = headY + 5;
+
+            drawClawLeg(claw.x, jointY, armLen, -1, claw.angle);
+            drawClawLeg(claw.x, jointY, armLen, 1, claw.angle);
+
+            ctx.restore();
+        }
+
+        function drawClawLeg(startX, startY, length, direction, angleOpen) {
+            ctx.save();
+            ctx.translate(startX, startY);
+            ctx.scale(direction, 1); 
+            
+            ctx.strokeStyle = '#94a3b8';
+            ctx.fillStyle = '#cbd5e1';
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const angle1 = 0.5 + angleOpen;
+            const x1 = Math.sin(angle1) * length * 0.7;
+            const y1 = Math.cos(angle1) * length * 0.7;
+
+            const angle2 = -0.3 + angleOpen;
+            const x2 = x1 + Math.sin(angle2) * length * 0.6;
+            const y2 = y1 + Math.cos(angle2) * length * 0.6;
+
+            const x3 = x2 - 8;
+            const y3 = y2 + 4;
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.quadraticCurveTo(x2 - 5, y2, x3, y3);
+            ctx.stroke();
+
+            ctx.fillStyle = '#475569';
+            ctx.beginPath();
+            ctx.arc(x1, y1, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 畫娃娃機前的壓克力框玻璃炫光與前側板
+        function drawMachineForefront() {
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.1)';
+            ctx.fillRect(0, VIEW_HEIGHT - 20, VIEW_WIDTH, 20);
+            ctx.fillStyle = '#e11d48';
+            ctx.fillRect(0, VIEW_HEIGHT - 5, VIEW_WIDTH, 5);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 15;
+            ctx.beginPath();
+            ctx.moveTo(100, -20);
+            ctx.lineTo(-20, 100);
+            ctx.stroke();
+
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(150, -20);
+            ctx.lineTo(-20, 150);
+            ctx.stroke();
+        }
+
+        // --- 主遊戲/動畫迴圈 ---
+        let lastTime = 0;
+        let fps = 60;
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+            if (dt > 0) {
+                fps = Math.round(1000 / dt);
+                fpsCounter.textContent = `FPS: ${fps}`;
+            }
+
+            // 1. 物理更新
+            if (gamePhase !== 'celebrating') {
+                updateClawLogic();
+                balls.forEach(ball => ball.update());
+                resolveBallCollisions();
+            }
+
+            // 2. 渲染畫面
+            drawMachineBackground();
+            balls.forEach(ball => ball.draw());
+            drawClaw();
+            drawMachineForefront();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- 電腦自動選取隨機目標球並啟動 ---
+        function runAutoDraw() {
+            if (balls.length === 0) {
+                updateStatus("球池內沒有任何波波，無法抽籤！");
+                return;
+            }
+            if (gamePhase !== 'ready') return;
+
+            const targetBall = balls[Math.floor(Math.random() * balls.length)];
+            claw.targetX = targetBall.x;
+            
+            setGamePhase('moving');
+            updateStatus("電腦啟動！正在鎖定目標波波...");
+        }
+
+        // --- 手動下放夾爪觸發 ---
+        function triggerManualDrop() {
+            if (gamePhase !== 'ready' || mode !== 'manual') return;
+            setGamePhase('lowering');
+            updateStatus("手動放下夾桿，開始抓取！");
+        }
+
+        // --- 中獎大特寫彈窗邏輯 ---
+        function triggerWin(name) {
+            setGamePhase('celebrating');
+            
+            winnerNameText.textContent = name;
+            winnerInfo.textContent = `(從現場 ${rawItems.length} 個名單中脫穎而出！)`;
+
+            playWinSound();
+
+            resultOverlay.classList.remove('pointer-events-none');
+            resultOverlay.classList.add('opacity-100');
+
+            initConfetti();
+        }
+
+        // 關閉特寫，恢復遊戲，並實行放回/不放回邏輯
+        function closeWinModal() {
+            const currentWinner = winnerNameText.textContent;
+            
+            // 判斷抽籤放回模式
+            if (drawRepeatMode === 'remove') {
+                // 不放回：從原始陣列中將當前得獎者精準剔除
+                rawItems = rawItems.filter(item => item !== currentWinner);
+                // 同步更新 Textarea 輸入框顯示，以即時回饋給使用者
+                itemsInput.value = rawItems.join('\n');
+                updateLabelsAndUI();
+                updateStatus(`已將【${currentWinner}】從球池與名單中排除！`);
+            } else {
+                updateStatus(`【${currentWinner}】保留在球池名單中。`);
+            }
+
+            resultOverlay.classList.add('pointer-events-none');
+            resultOverlay.classList.remove('opacity-100');
+            
+            stopConfetti();
+
+            // 重新初始化球池 (重力與碰撞會自然流暢地重啟)
+            initBallPool();
+        }
+
+        // --- Web Audio API 生成動態勝利音效 ---
+        function playWinSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioCtx = new AudioContext();
+
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    setTimeout(() => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+                        
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.6);
+                    }, index * 100);
+                });
+            } catch (e) {
+                console.log("Audio not supported or blocked by policy");
+            }
+        }
+
+        // --- 五彩紙屑 (Confetti) 物理粒子效果 ---
+        let confettiParticles = [];
+        let confettiAnimationId = null;
+
+        class Confetti {
+            constructor() {
+                this.x = Math.random() * confettiCanvas.width;
+                this.y = Math.random() * -confettiCanvas.height - 20;
+                this.size = Math.random() * 8 + 6;
+                this.color = getRandomColor();
+                this.vx = (Math.random() - 0.5) * 6;
+                this.vy = Math.random() * 4 + 3;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = (Math.random() - 0.5) * 10;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rotation += this.rotationSpeed;
+                this.vx += Math.sin(Date.now() / 500) * 0.05;
+
+                if (this.y > confettiCanvas.height) {
+                    this.y = -20;
+                    this.x = Math.random() * confettiCanvas.width;
+                }
+            }
+            draw() {
+                confettiCtx.save();
+                confettiCtx.translate(this.x, this.y);
+                confettiCtx.rotate(this.rotation * Math.PI / 180);
+                confettiCtx.fillStyle = this.color;
+                confettiCtx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                confettiCtx.restore();
+            }
+        }
+
+        function initConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+
+            confettiParticles = [];
+            for (let i = 0; i < 150; i++) {
+                confettiParticles.push(new Confetti());
+            }
+
+            function loop() {
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                confettiParticles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                confettiAnimationId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function stopConfetti() {
+            if (confettiAnimationId) {
+                cancelAnimationFrame(confettiAnimationId);
+                confettiAnimationId = null;
+            }
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        }
+
+        window.addEventListener('resize', () => {
+            if (gamePhase === 'celebrating') {
+                confettiCanvas.width = window.innerWidth;
+                confettiCanvas.height = window.innerHeight;
+            }
+        });
+
+        // --- 事件監聽與控制綁定 ---
+
+        // 還原為預設學校完整名單
+        btnRestoreDefault.addEventListener('click', () => {
+            itemsInput.value = defaultSchoolNames.join('\n');
+            syncItemsFromTextarea();
+            initBallPool();
+            updateStatus("已載入完整學校名單並重新生成球池！");
+        });
+
+        // 清空
+        btnClear.addEventListener('click', () => {
+            itemsInput.value = "";
+            syncItemsFromTextarea();
+            initBallPool();
+            updateStatus("名單已清空，請重新輸入！");
+        });
+
+        itemsInput.addEventListener('input', () => {
+            syncItemsFromTextarea();
+        });
+
+        // 重複模式切換監聽
+        labelDrawKeep.addEventListener('click', () => setDrawRepeatMode('keep'));
+        labelDrawRemove.addEventListener('click', () => setDrawRepeatMode('remove'));
+
+        // 手動/自動模式選項切換
+        labelModeAuto.addEventListener('click', () => setControlMode('auto'));
+        labelModeManual.addEventListener('click', () => setControlMode('manual'));
+
+        // 更新名單與同步重置球池按鈕
+        btnSync.addEventListener('click', () => {
+            syncItemsFromTextarea();
+            initBallPool();
+        });
+
+        // 「開始抽籤」與控制按鈕
+        btnStartDraw.addEventListener('click', () => {
+            if (mode === 'auto') {
+                runAutoDraw();
+            }
+        });
+
+        // 手動操控 - 左/右/落爪 按鈕點擊
+        btnLeft.addEventListener('mousedown', () => { keys.ArrowLeft = true; });
+        btnLeft.addEventListener('mouseup', () => { keys.ArrowLeft = false; });
+        btnLeft.addEventListener('mouseleave', () => { keys.ArrowLeft = false; });
+        btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowLeft = true; });
+        btnLeft.addEventListener('touchend', () => { keys.ArrowLeft = false; });
+
+        btnRight.addEventListener('mousedown', () => { keys.ArrowRight = true; });
+        btnRight.addEventListener('mouseup', () => { keys.ArrowRight = false; });
+        btnRight.addEventListener('mouseleave', () => { keys.ArrowRight = false; });
+        btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowRight = true; });
+        btnRight.addEventListener('touchend', () => { keys.ArrowRight = false; });
+
+        btnDrop.addEventListener('click', () => {
+            triggerManualDrop();
+        });
+
+        // 鍵盤監聽
+        window.addEventListener('keydown', (e) => {
+            if (mode !== 'manual') return;
+            if (document.activeElement === itemsInput) return;
+
+            if (e.key === 'ArrowLeft') {
+                keys.ArrowLeft = true;
+                e.preventDefault();
+            }
+            if (e.key === 'ArrowRight') {
+                keys.ArrowRight = true;
+                e.preventDefault();
+            }
+            if (e.key === 'ArrowDown') {
+                keys.ArrowDown = true;
+                e.preventDefault();
+            }
+            if (e.key === ' ') { 
+                keys.Space = true;
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (mode !== 'manual') return;
+            if (e.key === 'ArrowLeft') keys.ArrowLeft = false;
+            if (e.key === 'ArrowRight') keys.ArrowRight = false;
+            if (e.key === 'ArrowDown') keys.ArrowDown = false;
+            if (e.key === ' ') keys.Space = false;
+        });
+
+        // 關閉大特寫彈窗
+        btnCloseResult.addEventListener('click', () => {
+            closeWinModal();
+        });
+
+        // 頁面初始化載入
+        window.onload = function() {
+            // 預設載入您提供的完整 238 位學生名單
+            itemsInput.value = defaultSchoolNames.join('\n');
+            syncItemsFromTextarea();
+            initBallPool();
+            setControlMode('auto');
+            
+            // 預設為不放回再抽
+            setDrawRepeatMode('remove');
+
+            // 啟動主渲染循環
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
